@@ -9,11 +9,11 @@ my idea of standard interops
 
 hard.input
 ====
-input interpos
+input interpos (needs work)
 
 hard.hooks
 ====
-BROKE these components have string fields to call functions in the provided namespace
+these components let you call a namespace/function by string for lifecycle methods
 
 hard.tween
 ====
@@ -42,4 +42,4 @@ calling hard.tween/add the first time creates a "__tween__" gameobject with the 
 
 hard.boiled
 ====
-experimental stuff
+experimental experiments

@@ -84,7 +84,6 @@
 (defn joy-left? []
 	(let [h (get-axis :horizontal)
 		  oh (first @axis-cache)]
-		  
 		(if (and (< h -0.3) (> oh -0.3)) 
 			(do (swap! axis-cache #(identity [h (last %)]))
 				true) 
@@ -114,3 +113,5 @@
 			(do (swap! axis-cache #(identity [(first %) v]))
 				true) 
 			false)))
+
+

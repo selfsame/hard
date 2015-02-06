@@ -1,10 +1,10 @@
 (ns hard.tween
-  (:use hard.core hard.input hard.boiled)
+  (:use hard.core hard.input hard.boiled hard.protocols)
   (:require arcadia.core 
   [clojure.string :as string])
   (:import [UnityEngine Color Vector3]))
  
-(declare -update --update show-ratio linked reset transition)
+(declare -update transition tweak)
  
 (comment TODO
 
@@ -29,33 +29,18 @@
 (def ^:private tweens (atom {}))
 (def ^:private new-tweens (atom {}))
 
+(defn -update [delta]
+  (let [now (UnityEngine.Time/time)
+        res (into {} (map (fn [t] (tweak t now)) @tweens))]
+    (reset! tweens (conj @new-tweens res))
+    (reset! new-tweens {})))
 
-
-(defprotocol Temporal
-   (--update [a b c]))
-
-(defprotocol Linkable
-  (-link [a b])
-  (linked [a]))
-
-(defprotocol Validatable
-  (valid? [o]))
-
-(defprotocol Ratial
-  (reset [o])
-  (show-ratio [o r]))
-
-(defprotocol Cloneable
-  (clone [o]))
-
-(defprotocol Targetable
-  (target [o]))
+(defn clean-tweens []
+  (reset! tweens {})
+  (reset! new-tweens {}))
 
 (arcadia.core/defcomponent Tween []
-  (Awake [this]
-    (use 'hard.tween))
-  (Update [this]
-    (-update (UnityEngine.Time/deltaTime))))
+  (Update [this] (-update (UnityEngine.Time/deltaTime))))
 
 
 (def ^:private handlers (atom 
@@ -141,11 +126,7 @@
 (defn- tweak [[t began] now]
   (--update t began now))
   
-(defn -update [delta]
-  (let [now (UnityEngine.Time/time)
-        res (into {} (map (fn [t] (tweak t now)) @tweens))]
-    (reset! tweens (conj @new-tweens res))
-    (reset! new-tweens {})))
+
 
 (defn delete [uid]
   (swap! tweens #(dissoc % uid)))
@@ -203,30 +184,34 @@
           false true))
   Temporal
     (--update [me began now]
-      (let [time-alive (- now began)
-            ratio (Mathf/Clamp (/  time-alive duration) 0.0 1.0)
-            
-            easefn (first (filter (:flags opts) (keys easing)))
-            in (get easing (or (:in opts) easefn))
-            out (get easing (or (:out opts) easefn))
+      (try             
+        (let [time-alive (- now began)
+              ratio (Mathf/Clamp (/  time-alive duration) 0.0 1.0)
+              
+              easefn (first (filter (:flags opts) (keys easing)))
+              in (get easing (or (:in opts) easefn))
+              out (get easing (or (:out opts) easefn))
 
-            eased (cond (and in out) ((:inout easing) (float ratio) in out)
-                      in ((:in easing) (float ratio) in)
-                      out ((:out easing) (float ratio) out)
-                      :else ratio)]
-        (mapv #(show-ratio % eased) @effects)
-        
+              eased (cond (and in out) ((:inout easing) (float ratio) in out)
+                        in ((:in easing) (float ratio) in)
+                        out ((:out easing) (float ratio) out)
+                        :else ratio)]
+          (mapv #(show-ratio % eased) @effects)
+          
 
-        (if (> time-alive duration)
-            (do
-              (mapv #(set! (.start (.g %)) nil) @effects)
-              ;will try 1 arity, catch try 0 arity
-              (when-let [cback (:callback opts)]
-                (try (cback me) 
-                  (catch Exception e 
-                    (try (cback) (catch Exception e (log (str e)))))))
-              (into {} (mapv (fn [n] {n now}) @links)))
-            {me began}))))
+          (if (> time-alive duration)
+              (do
+                (mapv #(set! (.start (.g %)) nil) @effects)
+                ;will try 1 arity, catch try 0 arity
+                (when-let [cback (:callback opts)]
+                  (try (cback me) 
+                    (catch Exception e 
+                      (try (cback) (catch Exception e (log (str e)))))))
+                (into {} (mapv (fn [n] {n now}) @links)))
+              {me began}))
+          (catch Exception e 
+            (do (log (str "removing " me))
+              {})))))
 
 
 

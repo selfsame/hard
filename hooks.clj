@@ -9,8 +9,17 @@
 		(let [bound (resolve (symbol fnstr))]
 			(when bound
 				(try (apply bound (cons (.gameObject compo) more)) 
-	 				(catch Exception e (log (str e))))))))
+	 				(catch Exception e 
+	 					(bound)))))))
  
+(arcadia.core/defcomponent OnStart [^String ns ^String callfn]
+	(Awake [this] (use (symbol ns)))
+	(Start [this] (have-fun this callfn)))
+
+(arcadia.core/defcomponent OnUpdate [^String ns ^String updatefn]
+	(Awake [this] (use (symbol ns)))
+	(Update [this] (have-fun this updatefn)))
+
 (arcadia.core/defcomponent Mouse [ ^String ns ^String down ^String up ^String enter ^String leave ^String over ^Boolean m-over]
 	(Awake [this]
 		(use 'hard.hooks (symbol ns)))
@@ -36,18 +45,23 @@
 (arcadia.core/defcomponent MouseDown [^String ns ^String mousedown]
 	(Awake [this] (use 'hard.hooks (symbol ns)))
 	(OnMouseDown [this] (have-fun this mousedown))) 
+
 (arcadia.core/defcomponent MouseEnter [^String ns ^String mouseenter]
 	(Awake [this] (use 'hard.hooks (symbol ns)))
 	(OnMouseEnter [this] (have-fun this mouseenter))) 
+
 (arcadia.core/defcomponent MouseExit [^String ns ^String mouseexit]
 	(Awake [this] (use 'hard.hooks (symbol ns)))
 	(OnMouseExit [this] (have-fun this mouseexit))) 
+
 (arcadia.core/defcomponent MouseOver [^String ns ^String mouseover]
 	(Awake [this] (use 'hard.hooks (symbol ns)))
 	(OnMouseOver [this] (have-fun this mouseover))) 
+
 (arcadia.core/defcomponent MouseUp [^String ns ^String mouseup]
 	(Awake [this] (use 'hard.hooks (symbol ns)))
 	(OnMouseUp [this] (have-fun this mouseup))) 
+
 (arcadia.core/defcomponent MouseDrag [^String ns ^String mousedrag ^Vector2 previous]
 	(Awake [this] (use 'hard.hooks (symbol ns)))
 	(OnMouseDrag [this] 
@@ -79,11 +93,3 @@
   
 
   (log "hard.hooks on")
-
-
-  ; (import '[UnityEngine Vector3 Color GameObject Transform MonoBehaviour])
-  ; (arcadia.core/defcomponent Hinted [^String s ^int i ^float f ^GameObject go ^UnityEngine.Transform t ^Vector3 v ^Color c ^System.MonoType mt 
-  ; 	^Quaternion q ]
-  ; 	) 
-
-  ; (.AddComponent (find-name "Cube") Hinted)

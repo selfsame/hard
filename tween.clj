@@ -195,11 +195,12 @@
               eased (cond (and in out) ((:inout easing) (float ratio) in out)
                         in ((:in easing) (float ratio) in)
                         out ((:out easing) (float ratio) out)
-                        :else ratio)]
+                        :else ratio)
+              time-remaining (- time-alive duration)]
           (mapv #(show-ratio % eased) @effects)
           
 
-          (if (> time-alive duration)
+          (if (pos? time-remaining)
               (do
                 (mapv #(set! (.start (.g %)) nil) @effects)
                 ;will try 1 arity, catch try 0 arity
@@ -207,7 +208,7 @@
                   (try (cback me) 
                     (catch Exception e 
                       (try (cback) (catch Exception e (log (str e)))))))
-                (into {} (mapv (fn [n] {n now}) @links)))
+                (into {} (mapv (fn [n] {n (- now time-remaining)}) @links)))
               {me began}))
           (catch Exception e 
             (do (log (str "removing " me))

@@ -2,7 +2,7 @@
 (ns hard.core
   (:require arcadia.core)
   (:import
-    [UnityEngine Physics Debug Resources PrimitiveType Application Color Input Screen]))
+    [UnityEngine Physics Debug Resources GameObject PrimitiveType Application Color Input Screen]))
  
 (declare position!)
 
@@ -53,6 +53,12 @@
 (defn vdiv [& more] (reduce-operate / more))
 (defn -v [op & more] (reduce-operate op more)) 
 
+(defn V+ [^Vector3 a ^Vector3 b] (Vector3/op_Addition a b))
+(defn V- [^Vector3 a ^Vector3 b] (Vector3/op_Subtraction a b))
+(defn V* [a b] (Vector3/op_Multiply a b))
+(defn V÷ [a b] (Vector3/op_Division a b))
+(defn Vx [^Vector3 a ^Vector3 b] (Vector3/Cross a b))
+
 (defn find-name [str] (. GameObject (Find str)))
 
 (defn ->go [v]
@@ -66,15 +72,17 @@
       :else (if-let [o (->go v)] (.transform o) nil)))
 
 (defn ->v3 [o] 
-  (cond (number? o) (Vector3. o o o)
-    (sequential? o) (Vector3. (get-or o 0 0) (get-or o 1 0) (get-or o 2 0))
+  (cond 
     (vector3? o) o
+    (gameobject? o) (.position (.transform o))
+    (number? o) (Vector3. o o o)
+    (sequential? o) (Vector3. (get-or o 0 0) (get-or o 1 0) (get-or o 2 0))
+    
     (vector2? o) (Vector3. (.x o) (.y o) 0)
     (vector4? o) (Vector3. (.x o) (.y o) (.z o))
     (quaternion? o) (Vector3. (.x o)(.y o)(.z o))
     (color? o) (Vector3. (.r o)(.g o)(.b o))
     (transform? o) (.position o)
-    (gameobject? o) (.position (.transform o))
     :else
     (try (.position (.transform (.gameObject o)))
         (catch Exception e (type o)))))
@@ -88,12 +96,7 @@
     (color? o) [(.r o)(.g o)(.b o)(.a o)]
     :else (vec o)))
 
-(defn vec3 [o]
-  "depreciated" (->v3 o))
 
-(defn unvec [o]
-  "depreciated"
-  [(.x o)(.y o)(.z o)])
 
 (defn -editor? []
   (. Application isEditor)) 
@@ -105,14 +108,13 @@
   (log (str "loading scene " sn "..."))
   (Application/LoadLevel sn))
 
-(defn quit [sn]
+(defn quit []
   (Application/Quit))
 
 (defn screen-size []
   [(Screen/width)(Screen/height)])
 
 (defn main-camera [] (UnityEngine.Camera/main))
-
 
 (defn resource [s] (UnityEngine.Resources/Load s))
 
@@ -128,24 +130,18 @@
   (if (sequential? o)
     (mapv destroy! o)))))
 
-(defn primitive! [kw]
-  (GameObject/CreatePrimitive 
-    {:cube UnityEngine.PrimitiveType/Cube
-    :plane UnityEngine.PrimitiveType/Plane
-    :sphere UnityEngine.PrimitiveType/Sphere
-    :cylinder UnityEngine.PrimitiveType/Cylinder
-    :quad UnityEngine.PrimitiveType/Quad
-    :capsule UnityEngine.PrimitiveType/Capsule}))
+(def primitive! create-primitive)
 
-(def CLONED (atom []))
+(defonce CLONED (atom []))
 
 (defn clone!
-  ([ref] (clone! ref false))
+  ([ref] (clone! ref nil))
   ([ref pos]
     (let [source (if (string? ref) (find-name ref) ref)
-        gob (. GameObject (Instantiate source))]
+        pos  (if pos (->v3 pos) (->v3 source))
+        quat  (.rotation (.transform source))
+        gob (. GameObject (Instantiate source pos quat))]
       (swap! CLONED #(cons gob %))
-      (when pos (position! gob pos)) 
       gob)))
 
 (defn clear-cloned [] 
@@ -176,15 +172,18 @@
 (defn parent! [a b]
   (set! (.parent (.transform a)) (.transform b)))
 
+(defn unparent! ^GameObject [^GameObject child]
+  (set! (.parent (.transform child)) nil) child)
+
 (defn world-position [o]
   (when-let [o (->go o)] (.TransformPoint (.transform o) (->v3 o))))
 
 (defn position! [o pos]
-  (when-let [o (->go o)] (set! (.position (.transform o)) (->v3 pos))))
+  (set! (.position (.transform o)) (->v3 pos)))
 
 (defn local-direction [o v]
   (when-let [o (->go o)]
-    (let [[x y z] (if (vector3? v) (unvec v) v)]
+    (let [[x y z] (->vec v)]
       (.TransformDirection (.transform o) x y z))))
 
 (defn transform-point [o v]
@@ -194,6 +193,10 @@
 (defn inverse-transform-point [o v]
   (when-let [o (->go o)]
     (.InverseTransformPoint (.transform o) (->v3 v))))
+
+(defn inverse-transform-direction [o v]
+  (when-let [o (->go o)]
+    (.InverseTransformDirection (.transform o) (->v3 v))))
 
 (defn move-towards [v1 v2 step]
   (Vector3/MoveTowards v1 v2 step))
@@ -222,7 +225,17 @@
   (when-let [o (->go o)]
     (set! (.eulerAngles (.transform o)) (clamp-v3 rot 0 360))))
 
+(defn look-at! [a b]
+  (.LookAt (->transform a) (->v3 b)))
 
+(defn look-quat [a b]
+  (Quaternion/LookRotation  (->v3 (v- (->v3 b) (->v3 a)))))
+
+(defn lerp-look! [a b ^double v]
+  (let [at (->transform a)
+        aq (.rotation at)
+        lq (look-quat a b)]
+    (set! (.rotation at) (Quaternion/Lerp aq lq (float v)))))
 
  
  
@@ -260,4 +273,56 @@
     (when-let [gob (->go thing)]
       (.GetComponentsInChildren gob sym))))
 
+(defn children [go]
+  (child-components go UnityEngine.Transform))
+
+(defn child-named [go s]
+  (let [ts (child-components go UnityEngine.Transform)]
+    (first (take 1 (filter #(= (.name %) s) (map ->go ts))))))
+
+
+
+(defn rand-vec [& more]
+  (mapv (fn [col]
+    (cond (number? col) (rand col)
+    (sequential? col) 
+    (case (count col) 
+      0 (rand) 
+      1 (rand (first col))
+      2 (+ (rand (apply - (reverse col))) (first col))
+      (rand)
+    :else (rand)))) more))
+
+
+;Infix macro 
+;"PEMDAS is common. It stands for Parentheses, Exponents, Multiplication, Division, Addition, Subtraction"
+(def ^:private ordered-ops ['* 'v* 'V* '/ 'vdiv 'V÷ '+ 'v+ 'V+ '- 'v- 'V-])
+
+(defn ^:private non-op? [x] (if ((set ordered-ops) x) false true))
+
+(defn ^:private num-or-seq? [e] (or (number? e) (sequential? e)))
+
+(defn ^:private group [col op] 
+  (let [pass1 (partition-by #(or (non-op? %) (= op %)) col)]
+    (map 
+      #(if-not (> (count %) 1)
+        (first %)
+        (let [de-opped (filter non-op? %)]
+          (if (not= (count de-opped) (count %))
+            (cons op (filter non-op? %))
+            %))) 
+      pass1)))
+
+(defn ^:private red-inf [col]
+  (let [col-2 (map #(if (and (list? %) (not= 1 (count %))) (red-inf %) %) col)]
+   (first (reduce group col-2 ordered-ops))))
+
+(defmacro $ [& more]
+  (let [transformed (red-inf more)]
+  `(~@transformed)))
+
+
+
+
 (log "hard.core is here")
+

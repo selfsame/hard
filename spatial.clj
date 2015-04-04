@@ -1,12 +1,14 @@
 (ns hard.spatial
 	(:use hard.core)
-  (:require arcadia.core ))
+  (:require arcadia.core )
+  (:import [Mathf]))
    
 (def ^:private UID (atom 0))
 (defn- get-uid [] (swap! UID inc)) 
 (def RECORDS (atom {}))
 
 (defn forget [thing record]
+  (when record
   (let [members @(:membership record)
           data @(:data record)
           member-record (or (get members thing) false)]
@@ -14,13 +16,21 @@
         (do
           (when (get data member-record)
             (swap! (get data member-record) disj thing))
-        (swap! (:membership record) #(dissoc % thing))))))
+        (swap! (:membership record) #(dissoc % thing)))))))
 
 
 
  (arcadia.core/defcomponent SpatialRecordEntry [^int uid]
   (OnDestroy [this]
-    (forget (.gameObject this) (get @RECORDS uid))))
+    (forget (->go this) (get @RECORDS uid))))
+
+; (arcadia.core/defcomponent Gozmo [] 
+;   (OnDrawGizmos [this] 
+;     (gizmo-color (color [0.2 0.2 0.6]))
+;     (Gizmos/DrawSphere (->v3 this) 0.5)
+;     (hash-vis this)
+;     (mapv block-vis (sel))))
+
 
 (defn bucket-hash [size]
   (let [uid (get-uid)
@@ -31,9 +41,12 @@
    :membership (atom {})}] 
    (swap! RECORDS conj {uid res})
    res))
- 
+
+(defn inty [n]
+  (if (neg? n) (dec (int n)) (int n)))
+
 (defn gob->bucket [thing size]
-	(when (gameobject? thing) (mapv int (-v / (vec3 thing) size))))
+	(when (gameobject? thing) (mapv inty (vdiv (->v3 thing) size))))
 
 (defn store [thing H]
   (when (gameobject? thing)
@@ -48,13 +61,16 @@
         bucket [x y z]
         member-record (or (get members uid) false)]
 
-  (if-not member-record
+  (if-not member-record 
     ;register
-    (swap! (:membership H) conj {uid bucket} )
-    ;else
-    (when (not= member-record bucket)
-      ;remove the member from old bucket"
-      (swap! (get data member-record) disj uid)))
+    (swap! (:membership H) conj {uid bucket}))
+    
+  (when (not= member-record bucket)
+      (when-let [from (get data member-record)]
+        (if (= 1 (count @from))
+          (swap! (:data H) dissoc member-record)
+          (swap! from disj uid))
+      (swap! (:membership H) conj {uid bucket})))
 
   (if (nil? (get data bucket))
     (swap! (:data H) conj {bucket (atom #{uid})})

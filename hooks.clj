@@ -1,46 +1,24 @@
 (ns hard.hooks
 	(:use hard.core hard.input arcadia.messages)
-	(:require arcadia.core)) 
-
-"CURRENTLY BROKED"
+	(:require arcadia.core)
+	(:import [UnityEngine])) 
    
 (defn have-fun [compo fnstr & more]
 	(when (not= "" fnstr)
 		(let [bound (resolve (symbol fnstr))]
 			(when bound
-				(try (apply bound (cons (.gameObject compo) more)) 
-	 				(catch Exception e 
-	 					(bound)))))))
+				(apply bound (cons (.gameObject compo) more))))))
+
+
+(arcadia.core/defcomponent Mouse [ ^String ns ^String down ^String up ^String enter ^String exit ^String over ^Boolean m-over]
+	(Awake [this] (use 'hard.hooks (symbol ns)))
+	(Start [this] (use 'hard.hooks (symbol ns)))
+	(OnMouseDown [this] (have-fun this down))
+    (OnMouseUp [this] (have-fun this up))
+	(OnMouseEnter [this] (have-fun this enter))
+	(OnMouseExit [this] (have-fun this exit))
+	(OnMouseOver [this] (have-fun this over)))  
  
-(arcadia.core/defcomponent OnStart [^String ns ^String callfn]
-	(Awake [this] (use (symbol ns)))
-	(Start [this] (have-fun this callfn)))
-
-(arcadia.core/defcomponent OnUpdate [^String ns ^String updatefn]
-	(Awake [this] (use (symbol ns)))
-	(Update [this] (have-fun this updatefn)))
-
-(arcadia.core/defcomponent Mouse [ ^String ns ^String down ^String up ^String enter ^String leave ^String over ^Boolean m-over]
-	(Awake [this]
-		(use 'hard.hooks (symbol ns)))
-	(Start [this] (use (symbol ns)))
-	(Update [this]
-		(let [mouse-hits (ray-hits (mouse-ray) 5000)
-			  overme (first (filter 
-					#(= (parent-component (.collider %) (type this)) this) (vec mouse-hits)))]
-			(if overme
-				(do (have-fun this over)
-					(when (false? (.m-over this))
-						(do (have-fun this enter)
-							(set! (.m-over this) true)))
-					(when (mouse-down?)
-						(have-fun this down))
-					(when (mouse-up?)
-						(have-fun this up)))
-				(when (true? (.m-over this))
-						(do (have-fun this leave)
-							(set! (.m-over this) false)))))))  
-
 
 (arcadia.core/defcomponent MouseDown [^String ns ^String mousedown]
 	(Awake [this] (use 'hard.hooks (symbol ns)))
@@ -65,18 +43,31 @@
 (arcadia.core/defcomponent MouseDrag [^String ns ^String mousedrag ^Vector2 previous]
 	(Awake [this] (use 'hard.hooks (symbol ns)))
 	(OnMouseDrag [this] 
-		(let [m (mouse-pos)
-			  p [(.x previous) (.y previous)]]
+		(let [m (mouse-pos) 
+			  p [(.x previous) (.y previous)]
+			  delta (mapv - m p)]
 			(when-not (= m p)
 				(set! (.previous this) (Vector2. (first m) (last m)))
-				(have-fun this mousedrag (mapv - m p)))))) 
+				(when (= [true true] (mapv #(< % 10) delta))
+				 (have-fun this mousedrag (mapv - m p)))))))
 
-(arcadia.core/defcomponent LifeCycle [ ^String ns ^String start ^String update]
-	(Awake [this]
-		(use 'hard.hooks (symbol ns)))
-	(Start [this] (use (symbol ns))
-		(have-fun this start))
-	(Update [this] (have-fun this update))) 
+(arcadia.core/defcomponent OnStart [^String ns ^String start]
+	(Awake [this] (use 'hard.hooks (symbol ns)))
+	(Start [this] (have-fun this start)))
+
+(arcadia.core/defcomponent OnUpdate [^String ns ^String update]
+	(Awake [this] (use 'hard.hooks (symbol ns)))
+	(Update [this] (have-fun this update)))
+
+(arcadia.core/defcomponent DestroyHook [^String ns ^String destroyfn]
+	(Awake [this] (use 'hard.hooks (symbol ns)))
+	(OnDestroy [this] (have-fun this destroyfn)))
+
+(arcadia.core/defcomponent LifeCycle [ ^String ns ^String startfn ^String updatefn ^String destroyfn]
+	(Awake [this] (use 'hard.hooks (symbol ns)))
+	(Start [this] (have-fun this startfn))
+	(Update [this] (have-fun this updatefn))
+	(OnDestroy [this] (have-fun this destroyfn))) 
 
 
 (arcadia.core/defcomponent Trigger [ ^String ns ^String enter ^String exit ^String stay]
@@ -90,6 +81,9 @@
 	(OnCollisionEnter [this collision] (have-fun this enter collision))
 	(OnCollisionStay [this collision] (have-fun this stay collision))
 	(OnCollisionExit [this collision] (have-fun this exit collision))) 
-  
 
-  (log "hard.hooks on")
+(arcadia.core/defcomponent Gui [^String ns ^String gui-fn]
+	(Awake [this] (use 'hard.hooks (symbol ns)))
+	(OnGUI [this] (have-fun this gui-fn))) 
+
+  (log "hard.hooks on")  

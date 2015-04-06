@@ -1,10 +1,14 @@
 (ns hard.edit
 	(:use [hard.core])
 	(:import 
-		
 		     [UnityEngine Gizmos]))
 
 (defn sel [] (Selection/objects))
+
+(defn sel! 
+	([v] (cond (gameobject? v) (set! (Selection/objects) (into-array [v]))
+			   (sequential? v) (set! (Selection/objects) (into-array v))))
+	([v & more] (set! (Selection/objects) (into-array (cons v more)))))
 
 (defn active [] (Selection/activeGameObject))
 
@@ -20,17 +24,15 @@
 	(import '[UnityEngine HideFlags])
 	(set! (.hideFlags go) HideFlags/HideInHierarchy))
 
-(defn gizmo-color [c]
-  (set! Gizmos/color c))
- 
-(defn gizmo-line [^Vector3 from ^Vector3 to]
-  (Gizmos/DrawLine from to))
- 
-(defn gizmo-ray [^Vector3 from ^Vector3 dir]
-  (Gizmos/DrawRay from dir))
- 
-(defn gizmo-point [^Vector3 v]
-  (Gizmos/DrawSphere v 0.075)) 
+(defn add-tag [s] (Extras/AddTag (str s)))
 
-(defn gizmo-cube [^Vector3 v ^Vector3 s]
-  (Gizmos/DrawWireCube v s)) 
+(defn scene-use [-ns & more]
+	(let [sn (str -ns)
+		  go (or (find-name sn) (GameObject. (str "(use " -ns ")")))
+		  hook (do (destroy! (.GetComponent go hard.hooks.LifeCycle))
+		  		   (.AddComponent go hard.hooks.LifeCycle))
+		  {:keys [start update]} (or (first more) {})]
+		(! hook ns sn)
+		(when start (! hook startfn (str start)))
+		(when update (! hook updatefn (str update)))
+		(no-edit! go)))

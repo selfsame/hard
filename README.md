@@ -4,11 +4,11 @@ hard.core
 for ```arcadia -b develop``` and Unity 5
 
 --news--
-hard.tween has been depreciated in favore of [tween.core](https://github.com/selfsame/tween)
+hard.tween has been removed in favor of [tween.core](https://github.com/selfsame/tween)
 
 
 * hard.core
-standard interops, Unity predicate fns, casting fns (```->go ->v3 ->vec```), overloaded operators, Vector3 opbindings, ```clone! clear-cloned destroy! resource```, etc. Worth a read if you're learning how to work with arcadia!
+standard interops, Unity predicate fns, casting fns (```->go ->v3 ->vec```), overloaded operators, Vector3 opbindings, ```clone! clear-cloned destroy! resource```, macros, etc. 
 
 
 * hard.input
@@ -22,14 +22,17 @@ standard interops, Unity predicate fns, casting fns (```->go ->v3 ->vec```), ove
 * hard.hooks
 components for calling clojure ns/fn's via strings.  Meant to avoid non-generic ```defcomponent```s
 
-* hard.spatial
-spatial data structures live here
+* hard.physics
+rigidbody interops
 
 * hard.animation
 animation utilities
 
 * hard.mesh
 mesh utilities
+
+* hard.spatial
+spatial data structures live here
 
 * hard.boiled
 experimental ns

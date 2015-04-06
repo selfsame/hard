@@ -24,7 +24,12 @@
 (defn key-up? [k]
 	(Input/GetKeyUp (kcode* k)))
 
-    
+(defmacro route [f & more]
+	(let [pairs (partition 2 more)]
+		(cons 'do
+			(for [[k code] pairs]
+			`(if (~f ~k) ~code) ))))
+
 
 (defn ^:private mouse-code* [b]
 	(cond (#{0 1 2} b) b
@@ -63,18 +68,16 @@
 	(.ScreenPointToRay (Camera/main) (Input/mousePosition)))
 
 (defn ray-hit
-	([ray] (ray-hit ray 10000))
+	([ray] (ray-hit ray 10000.0))
 	([^Ray ray ^double length ]
 		(let [hit (RaycastHit.)]
-			(Physics/Raycast ray (by-ref hit) length))))
+			(Physics/Raycast (.origin ray) (.direction ray) length))))
 
 (defn ray-hits
-	;([ray] (ray-hit ray 100))
+	([ray] (ray-hits ray 1000.0))
 	([^Ray ray ^double length ]
 		(let [hit (RaycastHit.)]
-			;(Physics/Raycast ray hit (float 100) (int 0))
-			(Physics/RaycastAll (.origin ray) (.direction ray) length)
-			)))
+			(Physics/RaycastAll (.origin ray) (.direction ray) length))))
 
  
 (defn joy []

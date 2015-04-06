@@ -1,13 +1,14 @@
 
 (ns hard.core
-  (:require arcadia.core)
+  (:require arcadia.core clojure.string)
   (:import
-    [UnityEngine Physics Debug Resources GameObject PrimitiveType Application Color Input Screen]))
- 
+    [UnityEngine Debug Resources GameObject PrimitiveType Application Color Input Screen Gizmos]))
+
 (declare position!)
 
-(defn log [x] 
-  (UnityEngine.Debug/Log x))
+(defn log 
+  ([x] (UnityEngine.Debug/Log x))
+  ([x & more] (UnityEngine.Debug/Log (apply str (cons x more)))))
 
 (defn vector2? [x] (instance? UnityEngine.Vector2 x))
 (defn vector3? [x] (instance? UnityEngine.Vector3 x))
@@ -16,6 +17,7 @@
 (defn quaternion? [x] (instance? UnityEngine.Quaternion x))
 (defn color? [x] (instance? UnityEngine.Color x))
 (defn gameobject? [x] (instance? UnityEngine.GameObject x))
+(defn component? [x] (instance? UnityEngine.Component x))
 
 (defn- get-or [col idx nf] (or (get col idx) nf))
     
@@ -71,7 +73,11 @@
   (cond (transform? v) v
       :else (if-let [o (->go v)] (.transform o) nil)))
 
-(defn ->v3 [o] 
+(defn ->v3 
+  ([] (Vector3. 0 0 0))
+  ([a b] (Vector3. a b 0))
+  ([a b c] (Vector3. a b c))
+  ([o] 
   (cond 
     (vector3? o) o
     (gameobject? o) (.position (.transform o))
@@ -85,7 +91,7 @@
     (transform? o) (.position o)
     :else
     (try (.position (.transform (.gameObject o)))
-        (catch Exception e (type o)))))
+        (catch Exception e (type o))))))
 
 (defn ->vec [o]
   (cond 
@@ -122,25 +128,27 @@
   (and (gameobject? gob) (Extras/nullObject gob)))
 
 (defn destroy! [o]
-  (if-let [o (->go o)]
-    (if (gameobject? o)
+  (if (sequential? o)
+    (mapv destroy! o)
+    (let [o (if (component? o) o (->go o))]
       (if (-editor?)
         (. GameObject (DestroyImmediate o))
-        (. GameObject (Destroy o)))
-  (if (sequential? o)
-    (mapv destroy! o)))))
+        (. GameObject (Destroy o))))))
 
-(def primitive! create-primitive)
+(def primitive! arcadia.core/create-primitive)
 
 (defonce CLONED (atom []))
 
 (defn clone!
   ([ref] (clone! ref nil))
   ([ref pos]
-    (let [source (if (string? ref) (find-name ref) ref)
+    (let [source (cond (string? ref) (find-name ref)
+                       (keyword? ref) (resource (clojure.string/replace (subs (str ref) 1) #"[:]" "/")) 
+                       :else ref)
         pos  (if pos (->v3 pos) (->v3 source))
         quat  (.rotation (.transform source))
         gob (. GameObject (Instantiate source pos quat))]
+      (set! (.name gob) (.name source))
       (swap! CLONED #(cons gob %))
       gob)))
 
@@ -148,9 +156,7 @@
   (mapv destroy! @CLONED) 
   (reset! CLONED []))
 
-(defn gravity [] (Physics/gravity))
 
-(defn gravity! [v3] (set! (Physics/gravity) (vec3 v3)))
  
 ;uh.. so this is not really saving much typing
 (defn color 
@@ -161,9 +167,9 @@
 
 
 (defn- clamp-v3 [v3 min max]
-  (let [v (unvec (vec3 v3))
+  (let [v (->vec (->v3 v3))
       res (mapv #(Mathf/Clamp % min max) v)]
-      (vec3 res)))
+      (->v3 res)))
 
 
 ;The following functions assume gameobject args, I'm big on that but i guess they should also
@@ -225,8 +231,9 @@
   (when-let [o (->go o)]
     (set! (.eulerAngles (.transform o)) (clamp-v3 rot 0 360))))
 
-(defn look-at! [a b]
-  (.LookAt (->transform a) (->v3 b)))
+(defn look-at! 
+  ([a b] (.LookAt (->transform a) (->v3 b)))
+  ([a b c] (.LookAt (->transform a) (->v3 b) (->v3 b))))
 
 (defn look-quat [a b]
   (Quaternion/LookRotation  (->v3 (v- (->v3 b) (->v3 a)))))
@@ -276,9 +283,12 @@
 (defn children [go]
   (child-components go UnityEngine.Transform))
 
-(defn child-named [go s]
-  (let [ts (child-components go UnityEngine.Transform)]
-    (first (take 1 (filter #(= (.name %) s) (map ->go ts))))))
+(defn child-named 
+  ([go s & more]
+    (map #(child-named go %) (cons s more)))
+  ([go s]
+    (let [ts (child-components go UnityEngine.Transform)]
+      (first (take 1 (filter #(= (.name %) s) (map ->go ts)))))))
 
 
 
@@ -292,6 +302,34 @@
       2 (+ (rand (apply - (reverse col))) (first col))
       (rand)
     :else (rand)))) more))
+
+;MACROS
+
+(defmacro each [col bindings & code]
+  `(mapv (fn ~bindings ~@code) ~col))
+
+(defmacro mapfn [bindings & more]
+  (let [code (butlast more)
+      col (last more)]
+    `(map (fn ~bindings ~@code) ~col)))
+
+(defmacro when= [a b & body]
+    `(~'when (~'= ~a ~b) ~@body))
+
+(defmacro if= [a b & body]
+    `(if (= ~a ~b) ~@body))
+
+(defmacro ? [& body]
+  (let [[conds _ elses] (partition-by #(not= :else %) body)]
+    (if elses
+      `(~'cond ~@conds :else (~'do ~@elses))
+      `(~'cond ~@conds))))
+
+(defmacro ! [& body]
+  (let [value (last body)
+        access (butlast body)]
+    `(set! (.. ~@access) ~value)))
+
 
 
 ;Infix macro 
@@ -321,6 +359,48 @@
   (let [transformed (red-inf more)]
   `(~@transformed)))
 
+(defn ->comp [o c] (.GetComponent o c))
+(defn has? [o c] (if (->comp o c) true false))
+
+(defn- un-dot [syms]
+  (loop [col syms] 
+    (if (> (count col) 2)
+      (let [[obj op field] (take 3 col)
+            form (cond (= '. op) (list op obj field)
+                       (= '> op) (list '.GetComponent obj (str field)))]
+        (recur (cons form (drop 3 col))))
+        (first col))))
+
+(defmacro .* [& more]
+  (let [address (last more)
+        matcher (re-matcher #"[\>\.]|[^\>\.]+" (str address))
+        broken (loop [col []] (if-let [res (re-find matcher)] (recur (conj col res)) col))
+        s-exp (un-dot (concat (butlast more) (map symbol broken)))]
+  `(~@s-exp)))
+
+
+
+
+(defn material [o] (.material (.GetComponent (->go o) UnityEngine.Renderer)))
+(defn text-mesh [o] (.text (.GetComponent (->go o) "TextMesh")))
+
+
+
+
+(defn gizmo-color [c]
+  (set! Gizmos/color c))
+ 
+(defn gizmo-line [^Vector3 from ^Vector3 to]
+  (Gizmos/DrawLine from to))
+ 
+(defn gizmo-ray [^Vector3 from ^Vector3 dir]
+  (Gizmos/DrawRay from dir))
+ 
+(defn gizmo-point [^Vector3 v]
+  (Gizmos/DrawSphere v 0.075)) 
+
+(defn gizmo-cube [^Vector3 v ^Vector3 s]
+  (Gizmos/DrawWireCube v s)) 
 
 
 

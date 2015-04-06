@@ -20,14 +20,24 @@
 (defn kw->sym [kw]
 	(symbol (hyphen->camel (rest (str kw)))))
 
-(defmacro -set! [value -instance & -more]
-	(let [instance (if (vector? -instance) (first -instance) -instance)
-		more (if (vector? -instance) (rest -instance) -more)]
-		(let [mpath (map kw->sym more)]
-		`(set! (.. ~instance ~@mpath) ~value))))
 
-(defmacro -get [-instance & -more]
-	(let [instance (if (vector? -instance) (first -instance) -instance)
-		more (if (vector? -instance) (rest -instance) -more)]
-		(let [mpath (map kw->sym more)]
-		`(.. ~instance ~@mpath))))
+
+;https://gist.github.com/nasser/de0ddaead927dfa5261b
+(defmacro chance [& body]
+  (let [parts (partition 2 body)
+        total (apply + (map first parts))
+        rsym (gensym "random_")
+        clauses (->> parts
+                  (sort-by first (comparator >))
+                  (reductions
+                    (fn [[odds-1 _]
+                        [odds-2 expr-2]]
+                      [(+ odds-1 (/ odds-2 total)) expr-2])
+                    [0 nil])
+                  rest
+                  (mapcat
+                    (fn [[odds expr]]
+                      [(or (= 1 odds) `(< ~rsym ~odds))
+                       expr])))]
+    `(let [~rsym (rand)]
+       (cond ~@clauses))))

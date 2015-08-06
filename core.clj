@@ -3,7 +3,7 @@
   (:require arcadia.core clojure.string)
   (:import
     [UnityEngine Debug Resources GameObject PrimitiveType Application Color Input Screen Gizmos]))
-
+ 
 (declare position!)
 
 (defn log 
@@ -152,7 +152,7 @@
       (swap! CLONED #(cons gob %))
       gob)))
 
-(defn clear-cloned [] 
+(defn clear-cloned! [] 
   (mapv destroy! @CLONED) 
   (reset! CLONED []))
 

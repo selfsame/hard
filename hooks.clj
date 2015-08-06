@@ -10,7 +10,7 @@
 				(apply bound (cons (.gameObject compo) more))))
 		(catch Exception e (log e))))
 
-
+ 
 (arcadia.core/defcomponent Mouse [ ^String ns ^String down ^String up ^String enter ^String exit ^String over ^Boolean m-over]
 	(Awake [this] (use 'hard.hooks (symbol ns)))
 	(Start [this] (use 'hard.hooks (symbol ns)))

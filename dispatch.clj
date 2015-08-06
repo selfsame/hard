@@ -1,10 +1,12 @@
 (ns hard.dispatch
   (import [UnityEngine Debug Vector3 Vector2 Color]))
 
-(def __R (atom {}))
-(def __TYPEFNS (atom {}))
+(defonce __R (atom {}))
+(defonce __TYPEFNS (atom {}))
  
-
+(defn CLEAN [] 
+  (reset! __R (atom {}))
+  (reset! __TYPEFNS (atom {})))
 
 (defn- arity-match [given pattern]
   (every? true?
@@ -20,8 +22,8 @@
         #(conj % {code (eval (list 'fn '[col] (cons 'and code)))}))
         (get @__TYPEFNS code)))))
 
-(defn -invoke [sym arity-count args]
-  (if-let [arity-entries (get (get @__R sym) arity-count)]
+(defn -invoke [sym args]
+  (if-let [arity-entries (get (get @__R sym) (count args))]
     (let [;validly-typed (filter #((first %) (mapv type args)) arity-entries)
           arg-types (mapv type args)
           ;arity-t (filter #(% arg-types))
@@ -40,7 +42,7 @@
 
 (defn register [sym arg-len arg-types conditions f] 
   (swap! __R update-in [sym arg-len] #(merge-with merge % {(arity-matcher arg-types) {conditions f}}))
-  #(-invoke sym arg-len %&))
+  #(-invoke sym %&))
 
 
 (defn- make-conditional [args m]
@@ -53,13 +55,13 @@
                   (list v k))) m)))))
 
 (defmacro rule [name args & more]
-  (let [arg-len (count args)
+  (let [registry @__R
+        name-str (str name)
+        arg-len (count args)
         arg-types (mapv (comp :tag meta) args)
         -when (if (map? (first more)) (first more))
         code (if -when (rest more) more)
         conditions (make-conditional args (or -when {}))]
-  `(do 
-    (def ~name 
-      (register (var ~name) ~arg-len ~arg-types ~conditions (fn ~args ~@code))
-                  
-                         ))))
+    (if (re-find #".+\/.+" name-str)
+      `(register (var ~name) ~arg-len ~arg-types ~conditions (fn ~args ~@code))
+      `(def ~name (register (var ~name) ~arg-len ~arg-types ~conditions (fn ~args ~@code))))))

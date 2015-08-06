@@ -2,9 +2,10 @@
 using UnityEditor;
 using System.Collections;
 
-[System.Serializable]
+[System.Serializable] 
 public class Extras
 {
+
 	public static bool nullObject(Object o){
 		if (o == null) {
 			return true;

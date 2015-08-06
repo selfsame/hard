@@ -265,7 +265,7 @@
   (when-not (string? sym)
     (when-let [gob (->go thing)]
       (.GetComponentInChildren gob sym))))
-
+  
 (defn components [thing sym]
   (when-let [gob (->go thing)]
     (.GetComponents gob sym)))
@@ -280,8 +280,18 @@
     (when-let [gob (->go thing)]
       (.GetComponentsInChildren gob sym))))
 
+(defn sub-forms [go]
+  (rest (child-components go UnityEngine.Transform)))
+ 
 (defn children [go]
-  (child-components go UnityEngine.Transform))
+  (filter #(= (->transform go) (.parent %)) (sub-forms go)))
+
+(defn top-forms [go]
+  (butlast
+    (loop [o (->transform go) col '()]
+    (if-not (.parent o) (cons o col)
+      (recur (.parent o) (cons o col))))))
+
 
 (defn child-named 
   ([go s & more]
@@ -396,8 +406,11 @@
 (defn gizmo-ray [^Vector3 from ^Vector3 dir]
   (Gizmos/DrawRay from dir))
  
-(defn gizmo-point [^Vector3 v]
-  (Gizmos/DrawSphere v 0.075)) 
+(defn gizmo-point 
+  ([^Vector3 v]
+    (Gizmos/DrawSphere v 0.075))
+  ([^Vector3 v r]
+    (Gizmos/DrawSphere v r)))
 
 (defn gizmo-cube [^Vector3 v ^Vector3 s]
   (Gizmos/DrawWireCube v s)) 

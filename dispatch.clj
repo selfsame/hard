@@ -8,6 +8,8 @@
   (reset! __R (atom {}))
   (reset! __TYPEFNS (atom {})))
 
+(defn is [x] #(= % x))
+
 (defn- arity-match [given pattern]
   (every? true?
     (map #(or (nil? %1) (= %1 %2))

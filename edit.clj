@@ -26,13 +26,13 @@
 
 (defn add-tag [s] (Extras/AddTag (str s)))
 
+
+
 (defn scene-use [-ns & more]
 	(let [sn (str -ns)
-		  go (or (find-name sn) (GameObject. (str "(use " -ns ")")))
-		  hook (do (destroy! (.GetComponent go hard.hooks.LifeCycle))
-		  		   (.AddComponent go hard.hooks.LifeCycle))
-		  {:keys [start update]} (or (first more) {})]
+		  nombre (str "(use " -ns ")")
+		  go (or (find-name nombre) (GameObject. nombre))
+		  hook (do (destroy! (.GetComponent go hard.life.Use))
+		  		   (.AddComponent go hard.life.Use))]
 		(! hook ns sn)
-		(when start (! hook startfn (str start)))
-		(when update (! hook updatefn (str update)))
 		(no-edit! go)))

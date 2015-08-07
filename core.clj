@@ -114,6 +114,9 @@
   (log (str "loading scene " sn "..."))
   (Application/LoadLevel sn))
 
+(defn loaded-scene [sn]
+  (.loadedLevel Application))
+
 (defn quit []
   (Application/Quit))
 

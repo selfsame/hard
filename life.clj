@@ -1,14 +1,8 @@
 (ns hard.life
   (:require arcadia.core)
   (:use 
-    hard.core 
-    hard.input 
-    tween.core 
     hard.dispatch
-    hard.protocols)
-    (:import [UnityEngine Vector3]))
-    
- 
+    hard.protocols))
 
 (rule awake [])
 (rule start [])
@@ -69,3 +63,17 @@
   ; hard.protocols.IBumpTriggerStay2D
   ; (OnBumpTriggerStay2D [this collider] (bump-trigger-stay-2d this collider tag id))
   )
+ 
+
+(arcadia.core/defcomponent Use [^String ns]
+  (Awake [this] 
+    (use (symbol ns))
+    (awake this ns))
+  (Start [this] (start this ns)))
+
+(arcadia.core/defcomponent Update [f]
+ (Update [this] ((.f this) this)))
+
+(defn route-update [go f]
+  (let [c (.AddComponent go Update)]
+    (set! (.f c) f)))

@@ -116,8 +116,7 @@
   (log (str "loading scene " sn "..."))
   (Application/LoadLevel sn))
 
-(defn loaded-scene [sn]
-  (.loadedLevel Application))
+(defn loaded-scene [] Application/loadedLevel)
 
 (defn quit []
   (Application/Quit))
@@ -162,15 +161,12 @@
   (reset! CLONED []))
 
 
- 
 ;uh.. so this is not really saving much typing
 (defn color 
   ([col] (if (> (count col) 2) (apply color (take 4 col)) (color 0 0 0 0)))
   ([r g b] (color r g b 1.0))
   ([r g b a] (Color. r g b a)))
  
-
-
 (defn- clamp-v3 [v3 min max]
   (let [v (->vec (->v3 v3))
       res (mapv #(Mathf/Clamp % min max) v)]

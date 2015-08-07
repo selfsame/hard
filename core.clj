@@ -102,8 +102,10 @@
     (color? o) [(.r o)(.g o)(.b o)(.a o)]
     :else (vec o)))
 
-
-
+(defn X [o] (.x (->v3 o)))
+(defn Y [o] (.y (->v3 o)))
+(defn Z [o] (.z (->v3 o)))
+ 
 (defn -editor? []
   (. Application isEditor)) 
 
@@ -390,6 +392,10 @@
         broken (loop [col []] (if-let [res (re-find matcher)] (recur (conj col res)) col))
         s-exp (un-dot (concat (butlast more) (map symbol broken)))]
   `(~@s-exp)))
+
+
+(defmacro the [sym]
+  (let [symstr (str sym)] `(find-name ~symstr)))
 
 
 

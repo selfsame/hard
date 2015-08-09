@@ -24,7 +24,7 @@
 	(import '[UnityEngine HideFlags])
 	(set! (.hideFlags go) HideFlags/HideInHierarchy))
 
-(defn add-tag [s] (Extras/AddTag (str s)))
+; (defn add-tag [s] (Extras/AddTag (str s)))
 
 
 
@@ -35,4 +35,4 @@
 		  hook (do (destroy! (.GetComponent go hard.life.Use))
 		  		   (.AddComponent go hard.life.Use))]
 		(! hook ns sn)
-		(no-edit! go)))
+		(no-edit! go))) 

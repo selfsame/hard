@@ -3,7 +3,7 @@
   (:use 
     hard.dispatch
     hard.protocols))
-
+ 
 (rule awake [])
 (rule start [])
 (rule destroy [])
@@ -63,7 +63,7 @@
   ; hard.protocols.IBumpTriggerStay2D
   ; (OnBumpTriggerStay2D [this collider] (bump-trigger-stay-2d this collider tag id))
   )
- 
+  
 
 (arcadia.core/defcomponent Use [^String ns]
   (Awake [this] 

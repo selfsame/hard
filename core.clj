@@ -1,9 +1,8 @@
-
 (ns hard.core
   (:require arcadia.core clojure.string)
   (:import
     [UnityEngine Debug Resources GameObject PrimitiveType Application Color Input Screen Gizmos]))
- 
+
 (declare position!)
 
 (defn log 
@@ -129,8 +128,8 @@
 (defn resource [s] (UnityEngine.Resources/Load s))
 
 (defn null? [gob]
-  (and (gameobject? gob) (Extras/nullObject gob)))
-
+  (and (gameobject? gob) (arcadia.core/null-obj? gob)))
+  
 (defn destroy! [o]
   (if (sequential? o)
     (mapv destroy! o)
@@ -142,6 +141,12 @@
 (def primitive! arcadia.core/create-primitive)
 
 (defonce CLONED (atom []))
+
+(def _D_ (atom {}))
+
+(defn data [o] (get @_D_ o))
+
+(defn data! [o v] (swap! _D_ conj {o v}) o)
 
 (defn clone!
   ([ref] (clone! ref nil))
@@ -158,7 +163,8 @@
 
 (defn clear-cloned! [] 
   (mapv destroy! @CLONED) 
-  (reset! CLONED []))
+  (reset! CLONED [])
+  (reset! _D_ {}))
 
 
 ;uh.. so this is not really saving much typing

@@ -7,7 +7,10 @@
 (def HASH->FN (atom {}))
 (def DISPATCHMAP (atom {}))
  
-(defn CLEAN [] (reset! DISPATCHMAP {}))
+(defn CLEAN [] 
+  (reset! DISPATCHMAP {})
+  (reset! FN->QUOTE {})
+  (reset! HASH->FN {}))
 
 (defn iter-map [m f]
   (loop [kvs (seq m)]
@@ -19,12 +22,14 @@
   (iter-map m
     (fn [[k v]] 
       ;TODO try catch
-      (if (not (some #(or (false? %) (nil? %))  
+      (try
+        (if (not (some #(or (false? %) (nil? %))  
         (map 
           #(if (nil? %1) true (%1 %2)) 
           k args)))
         ;dispatchee
-        (apply v args)))))
+        (apply v args))
+        (catch Exception e (prn :ERR (map @FN->QUOTE k) args))))))
 
 
 ; walk simple compositions to allow equiv
@@ -67,6 +72,13 @@
         preds (map #(or %1 %2) spec-preds meta-preds)
         non-meta-args (mapv #(with-meta % nil) args)]
     `(do 
+      (let [userfn# (fn ~non-meta-args ~@code)
+            unique-user-fn# 
+            (unique-fn 
+              userfn# 
+              (hashed-form userfn#) 
+              (quote (~'fn ~non-meta-args ~@code)))] 
+        
       (swap! DISPATCHMAP update-in [(var ~sym) ~arity ~pass]
           (fn [m#] (conj (or m# {}) 
           ;{list of arg predicates (or nil), declared fn}
@@ -74,7 +86,7 @@
             (list ~@preds) 
             (hashed-form ~preds) 
             (quote ~preds))
-           (fn ~non-meta-args ~@code)} )))
+           unique-user-fn# } ))))
 
         (fn [& args#] 
             (let [res#
@@ -103,7 +115,7 @@
     `(def ~sym (-declare :rule ~sym ~args ~@more))))
 
 
-(defn humanize [data] (clojure.walk/postwalk #(if (fn? %) (@FN->QUOTE %) %) data))
+(defn humanize [data] (clojure.walk/postwalk #(if (fn? %) (get @FN->QUOTE % %) %) data))
 ;(humanize @DISPATCHMAP)
 (defn unseq [& more] (flatten (apply conj [] more)))
 

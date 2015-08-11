@@ -25,7 +25,7 @@
 (rule bump-trigger-enter-2d [])
 (rule bump-trigger-exit-2d [])
 (rule bump-trigger-stay-2d [])
-
+ 
 
 (arcadia.core/defcomponent Handler [^System.String tag ^System.String id]
   (Awake [this] (awake this tag id))

@@ -20,7 +20,7 @@
       (let [mesh (if (-editor?) (.mesh meshfilter) (.mesh meshfilter))
           verts (.vertices mesh)
           fn (cond (fn? c) c
-                :else (fn [_ _ _ _] (Color. 0 0 0 0)))
+                :else (fn [_ _ _ _] c))
           colors (into-array (doall 
                 (for [idx (range (count verts))
                   :let [v (.GetValue verts idx)

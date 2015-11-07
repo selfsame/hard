@@ -1,4 +1,3 @@
-
 (ns hard.core
   (:require arcadia.core clojure.string)
   (:import
@@ -102,17 +101,21 @@
     (color? o) [(.r o)(.g o)(.b o)(.a o)]
     :else (vec o)))
 
-
-
+(defn X [o] (.x (->v3 o)))
+(defn Y [o] (.y (->v3 o)))
+(defn Z [o] (.z (->v3 o)))
+ 
 (defn -editor? []
   (. Application isEditor)) 
 
 (defn playing? []
-  (. Application isPlaying)) 
+  (. Application isPlaying))
 
 (defn load-scene [sn]
   (log (str "loading scene " sn "..."))
   (Application/LoadLevel sn))
+
+(defn loaded-scene [] Application/loadedLevel)
 
 (defn quit []
   (Application/Quit))
@@ -125,8 +128,8 @@
 (defn resource [s] (UnityEngine.Resources/Load s))
 
 (defn null? [gob]
-  (and (gameobject? gob) (Extras/nullObject gob)))
-
+  (and (gameobject? gob) (arcadia.core/null-obj? gob)))
+  
 (defn destroy! [o]
   (if (sequential? o)
     (mapv destroy! o)
@@ -138,6 +141,12 @@
 (def primitive! arcadia.core/create-primitive)
 
 (defonce CLONED (atom []))
+(def _DATA_ (atom {}))
+(def _DEFERRED_ (atom []))
+(defn clear-cloned! [] 
+  (mapv destroy! @CLONED) 
+  (reset! CLONED [])
+  (reset! _DATA_ {}))
 
 (defn clone!
   ([ref] (clone! ref nil))
@@ -152,20 +161,24 @@
       (swap! CLONED #(cons gob %))
       gob)))
 
-(defn clear-cloned [] 
-  (mapv destroy! @CLONED) 
-  (reset! CLONED []))
+(defn data! [o v] (swap! _DATA_ conj {o v}) o)
+
+(defn data [o] (get @_DATA_ o))
+
+(defmacro defer! [& code] 
+  `(swap! ~'hard.core/_DEFERRED_ conj  
+    (fn [] ~@code)))
+(defn do-deferred [] 
+  (try (mapv #(%) @_DEFERRED_) (catch Exception e nil))
+  (reset! _DEFERRED_ []))
 
 
- 
 ;uh.. so this is not really saving much typing
 (defn color 
   ([col] (if (> (count col) 2) (apply color (take 4 col)) (color 0 0 0 0)))
   ([r g b] (color r g b 1.0))
   ([r g b a] (Color. r g b a)))
  
-
-
 (defn- clamp-v3 [v3 min max]
   (let [v (->vec (->v3 v3))
       res (mapv #(Mathf/Clamp % min max) v)]
@@ -225,7 +238,8 @@
 
 (defn rotate! [o rot]
   (when-let [o (->go o)]
-    (.Rotate (.transform o) (->v3 rot))))
+    (.Rotate (.transform o) (->v3 rot)))
+  o)
 
 (defn rotation! [o rot]
   (when-let [o (->go o)]
@@ -241,8 +255,11 @@
 (defn lerp-look! [a b ^double v]
   (let [at (->transform a)
         aq (.rotation at)
-        lq (look-quat a b)]
-    (set! (.rotation at) (Quaternion/Lerp aq lq (float v)))))
+        lq (look-quat a b)
+        res (Quaternion/Lerp aq lq (float v))]
+    (set! (.rotation at) res)
+    )
+  )
 
  
  
@@ -265,7 +282,7 @@
   (when-not (string? sym)
     (when-let [gob (->go thing)]
       (.GetComponentInChildren gob sym))))
-
+  
 (defn components [thing sym]
   (when-let [gob (->go thing)]
     (.GetComponents gob sym)))
@@ -280,8 +297,18 @@
     (when-let [gob (->go thing)]
       (.GetComponentsInChildren gob sym))))
 
+(defn sub-forms [go]
+  (rest (child-components go UnityEngine.Transform)))
+ 
 (defn children [go]
-  (child-components go UnityEngine.Transform))
+  (filter #(= (->transform go) (.parent %)) (sub-forms go)))
+
+(defn top-forms [go]
+  (butlast
+    (loop [o (->transform go) col '()]
+    (if-not (.parent o) (cons o col)
+      (recur (.parent o) (cons o col))))))
+
 
 (defn child-named 
   ([go s & more]
@@ -379,6 +406,10 @@
   `(~@s-exp)))
 
 
+(defmacro the [sym]
+  (let [symstr (str sym)] `(find-name ~symstr)))
+
+
 
 
 (defn material [o] (.material (.GetComponent (->go o) UnityEngine.Renderer)))
@@ -396,8 +427,11 @@
 (defn gizmo-ray [^Vector3 from ^Vector3 dir]
   (Gizmos/DrawRay from dir))
  
-(defn gizmo-point [^Vector3 v]
-  (Gizmos/DrawSphere v 0.075)) 
+(defn gizmo-point 
+  ([^Vector3 v]
+    (Gizmos/DrawSphere v 0.075))
+  ([^Vector3 v r]
+    (Gizmos/DrawSphere v r)))
 
 (defn gizmo-cube [^Vector3 v ^Vector3 s]
   (Gizmos/DrawWireCube v s)) 

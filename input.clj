@@ -16,10 +16,10 @@
 		(string? k) k))
 
 (defn key-down? [k]
-	(Input/GetKeyDown (kcode* k)))
+	(Input/GetKeyDown (kcode* k))
 
 (defn key? [k]
-	(Input/GetKey (kcode* k)))
+	(Input/GetKey (kcode* k))))
 
 (defn key-up? [k]
 	(Input/GetKeyUp (kcode* k)))

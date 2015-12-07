@@ -9,6 +9,8 @@
   ([x] (UnityEngine.Debug/Log x))
   ([x & more] (UnityEngine.Debug/Log (apply str (cons x more)))))
 
+(def delta-time UnityEngine.Time/deltaTime)
+
 (defn vector2? [x] (instance? UnityEngine.Vector2 x))
 (defn vector3? [x] (instance? UnityEngine.Vector3 x))
 (defn vector4? [x] (instance? UnityEngine.Vector4 x))
@@ -26,7 +28,7 @@
         (vector3? o) 3
         (vector2? o) 2
         (vector4? o) 4
-        (color? o) 4)) 
+        (color? o) 4))
 
 (defn- -vec [o]
   (cond (number? o) [o]
@@ -172,12 +174,15 @@
   (try (mapv #(%) @_DEFERRED_) (catch Exception e nil))
   (reset! _DEFERRED_ []))
 
+(defn name! [o s] (set! (.name o) (str s)) o)
+
 
 ;uh.. so this is not really saving much typing
+(defn color-normalized-number [n] (if (> (max n 0) 1) (* n 0.003921569) n))
 (defn color 
   ([col] (if (> (count col) 2) (apply color (take 4 col)) (color 0 0 0 0)))
   ([r g b] (color r g b 1.0))
-  ([r g b a] (Color. r g b a)))
+  ([r g b a] (Color. (color-normalized-number r) (color-normalized-number g) (color-normalized-number b) (color-normalized-number a))))
  
 (defn- clamp-v3 [v3 min max]
   (let [v (->vec (->v3 v3))
@@ -187,9 +192,12 @@
 
 ;The following functions assume gameobject args, I'm big on that but i guess they should also
 ;accept transforms
- 
+
+
+(defn parent [o] (.parent (->transform o)))
+
 (defn parent! [a b]
-  (set! (.parent (.transform a)) (.transform b)))
+  (set! (.parent (.transform a)) (.transform b)) a)
 
 (defn unparent! ^GameObject [^GameObject child]
   (set! (.parent (.transform child)) nil) child)
@@ -199,6 +207,11 @@
 
 (defn position! [o pos]
   (set! (.position (.transform o)) (->v3 pos)))
+
+(defn local-position [o] (.localPosition (.transform o)))
+
+(defn local-position! [o pos]
+  (set! (.localPosition (.transform o)) (->v3 pos)))
 
 (defn local-direction [o v]
   (when-let [o (->go o)]

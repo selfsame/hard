@@ -22,22 +22,19 @@
 
 
 
-;https://gist.github.com/nasser/de0ddaead927dfa5261b
-(defmacro chance [& body]
-  (let [parts (partition 2 body)
-        total (apply + (map first parts))
-        rsym (gensym "random_")
-        clauses (->> parts
-                  (sort-by first (comparator >))
-                  (reductions
-                    (fn [[odds-1 _]
-                        [odds-2 expr-2]]
-                      [(+ odds-1 (/ odds-2 total)) expr-2])
-                    [0 nil])
-                  rest
-                  (mapcat
-                    (fn [[odds expr]]
-                      [(or (= 1 odds) `(< ~rsym ~odds))
-                       expr])))]
-    `(let [~rsym (rand)]
-       (cond ~@clauses))))
+(defmacro fun-printer [t]
+  (let [v (with-meta (gensym "value")
+                     {:tag t})
+        w (with-meta (gensym "writer")
+                     {:tag 'System.IO.TextWriter})]
+    `(fn [~v ~w]
+       (.Write ~w
+               (str "$:) " ~v )))))
+
+(defmacro install-fun-printer
+  "Register a printer for t with clojure's print-method"
+  [t]
+  `(. ~(with-meta 'print-method
+                  {:tag 'clojure.lang.MultiFn})
+      ~'addMethod ~t (fun-printer ~t)))
+

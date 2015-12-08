@@ -8,6 +8,7 @@
 (defn gravity! [v3] (set! (Physics/gravity) (->v3 v3)))
 
 (defn rigidbody? [o] (instance? UnityEngine.Rigidbody o))
+
 (defn ->rigidbody [v]
   (if-let [o (->go v)] (component o UnityEngine.Rigidbody) nil))
 

@@ -11,6 +11,9 @@
 
 (def delta-time UnityEngine.Time/deltaTime)
 
+(defmacro ∆ [x]
+  `(* Time/deltaTime ~x))
+
 (defn vector2? [x] (instance? UnityEngine.Vector2 x))
 (defn vector3? [x] (instance? UnityEngine.Vector3 x))
 (defn vector4? [x] (instance? UnityEngine.Vector4 x))
@@ -103,27 +106,22 @@
     (color? o) [(.r o)(.g o)(.b o)(.a o)]
     :else (vec o)))
 
+
 (defn X [o] (.x (->v3 o)))
 (defn Y [o] (.y (->v3 o)))
 (defn Z [o] (.z (->v3 o)))
  
-(defn -editor? []
-  (. Application isEditor)) 
+(defn -editor? [] (. Application isEditor)) 
 
-(defn playing? []
-  (. Application isPlaying))
+(defn playing? [] (. Application isPlaying))
 
-(defn load-scene [sn]
-  (log (str "loading scene " sn "..."))
-  (Application/LoadLevel sn))
+(defn load-scene [sn] (Application/LoadLevel sn))
 
 (defn loaded-scene [] Application/loadedLevel)
 
-(defn quit []
-  (Application/Quit))
+(defn quit [] (Application/Quit))
 
-(defn screen-size []
-  [(Screen/width)(Screen/height)])
+(defn screen-size [] [(Screen/width)(Screen/height)])
 
 (defn main-camera [] (UnityEngine.Camera/main))
 
@@ -167,23 +165,27 @@
 
 (defn data [o] (get @_DATA_ o))
 
+
 (defmacro defer! [& code] 
   `(swap! ~'hard.core/_DEFERRED_ conj  
     (fn [] ~@code)))
+
 (defn do-deferred [] 
   (try (mapv #(%) @_DEFERRED_) (catch Exception e nil))
   (reset! _DEFERRED_ []))
 
-(defn name! [o s] (set! (.name o) (str s)) o)
 
 
-;uh.. so this is not really saving much typing
+
+
 (defn color-normalized-number [n] (if (> (max n 0) 1) (* n 0.003921569) n))
+
 (defn color 
   ([col] (if (> (count col) 2) (apply color (take 4 col)) (color 0 0 0 0)))
   ([r g b] (color r g b 1.0))
   ([r g b a] (Color. (color-normalized-number r) (color-normalized-number g) (color-normalized-number b) (color-normalized-number a))))
- 
+
+;TODO find fast version
 (defn- clamp-v3 [v3 min max]
   (let [v (->vec (->v3 v3))
       res (mapv #(Mathf/Clamp % min max) v)]
@@ -193,6 +195,7 @@
 ;The following functions assume gameobject args, I'm big on that but i guess they should also
 ;accept transforms
 
+(defn name! [o s] (set! (.name o) (str s)) o)
 
 (defn parent [o] (.parent (->transform o)))
 
@@ -206,12 +209,12 @@
   (when-let [o (->go o)] (.TransformPoint (.transform o) (->v3 o))))
 
 (defn position! [o pos]
-  (set! (.position (.transform o)) (->v3 pos)))
+  (set! (.position (.transform o)) (->v3 pos)) o)
 
 (defn local-position [o] (.localPosition (.transform o)))
 
 (defn local-position! [o pos]
-  (set! (.localPosition (.transform o)) (->v3 pos)))
+  (set! (.localPosition (.transform o)) (->v3 pos)) o)
 
 (defn local-direction [o v]
   (when-let [o (->go o)]
@@ -251,12 +254,11 @@
 
 (defn rotate! [o rot]
   (when-let [o (->go o)]
-    (.Rotate (.transform o) (->v3 rot)))
-  o)
+    (.Rotate (.transform o) (->v3 rot))) o)
 
 (defn rotation! [o rot]
   (when-let [o (->go o)]
-    (set! (.eulerAngles (.transform o)) (clamp-v3 rot 0 360))))
+    (set! (.eulerAngles (.transform o)) (clamp-v3 rot 0 360))) o)
 
 (defn look-at! 
   ([a b] (.LookAt (->transform a) (->v3 b)))
@@ -270,9 +272,7 @@
         aq (.rotation at)
         lq (look-quat a b)
         res (Quaternion/Lerp aq lq (float v))]
-    (set! (.rotation at) res)
-    )
-  )
+    (set! (.rotation at) res)))
 
  
  
@@ -331,7 +331,6 @@
       (first (take 1 (filter #(= (.name %) s) (map ->go ts)))))))
 
 
-
 (defn rand-vec [& more]
   (mapv (fn [col]
     (cond (number? col) (rand col)
@@ -343,21 +342,9 @@
       (rand)
     :else (rand)))) more))
 
+
+
 ;MACROS
-
-(defmacro each [col bindings & code]
-  `(mapv (fn ~bindings ~@code) ~col))
-
-(defmacro mapfn [bindings & more]
-  (let [code (butlast more)
-      col (last more)]
-    `(map (fn ~bindings ~@code) ~col)))
-
-(defmacro when= [a b & body]
-    `(~'when (~'= ~a ~b) ~@body))
-
-(defmacro if= [a b & body]
-    `(if (= ~a ~b) ~@body))
 
 (defmacro ? [& body]
   (let [[conds _ elses] (partition-by #(not= :else %) body)]
@@ -419,9 +406,23 @@
   `(~@s-exp)))
 
 
-(defmacro the [sym]
-  (let [symstr (str sym)] `(find-name ~symstr)))
 
+
+(defmacro the [& terms]
+  (let [symstr (apply str terms)] `(find-name ~symstr)))
+
+(defmacro every [& terms]
+  (let [symstr (or (first (filter #(instance? System.Text.RegularExpressions.Regex %) terms))
+                   (apply str (interpose " " terms)))] 
+  `(arcadia.core/objects-named ~symstr)))
+
+
+(defmacro bench [n & code]
+  `(time (dotimes [i# ~n] ~@code)))
+
+(defmacro ppexpand [code]
+  `(~'clojure.pprint/write (macroexpand-1 (quote ~code))
+    :dispatch ~'clojure.pprint/code-dispatch))
 
 
 

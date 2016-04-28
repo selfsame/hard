@@ -2,10 +2,9 @@
 (ns hard.boiled
 	(:use hard.core)
 	(:require 
-	[clojure.string :as string])
-  (:require arcadia.core)
+	 arcadia.core
+   [clojure.string :as string])
   (:import [UnityEngine]))
-
 
  (defn hyphen->camel [charseq]
 	(let [parted (partition-by #(= \- %) charseq)]
@@ -19,8 +18,6 @@
 
 (defn kw->sym [kw]
 	(symbol (hyphen->camel (rest (str kw)))))
-
-
 
 (defmacro fun-printer [t]
   (let [v (with-meta (gensym "value")

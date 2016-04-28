@@ -5,14 +5,23 @@
 
 (declare position!)
 
-(defn log 
-  ([x] (UnityEngine.Debug/Log x))
-  ([x & more] (UnityEngine.Debug/Log (apply str (cons x more)))))
+(defn playing? [] (. Application isPlaying))
+
+(defn load-scene [sn] (Application/LoadLevel sn))
+
+(defn loaded-scene [] Application/loadedLevel)
+
+(defn quit [] (Application/Quit))
+
+(defn screen-size [] [(Screen/width)(Screen/height)])
+
+(defn main-camera [] (UnityEngine.Camera/main))
+
+(defn resource [s] (UnityEngine.Resources/Load s))
 
 (def delta-time UnityEngine.Time/deltaTime)
 
-(defmacro ∆ [x]
-  `(* Time/deltaTime ~x))
+(defmacro ∆ [x] `(* Time/deltaTime ~x))
 
 (defn vector2? [x] (instance? UnityEngine.Vector2 x))
 (defn vector3? [x] (instance? UnityEngine.Vector3 x))
@@ -67,15 +76,10 @@
 
 (defn find-name [str] (. GameObject (Find str)))
 
-(defn ->go [v]
-  (cond (gameobject? v) v   
-      (sequential? v) nil
-      (string? v) (try (find-name v) (catch Exception e nil))
-      :else (try (.gameObject v) (catch Exception e nil))))
+(def ->go arcadia.core/gobj)
 
-(defn ->transform [v]
-  (cond (transform? v) v
-      :else (if-let [o (->go v)] (.transform o) nil)))
+(defn ->transform [v] 
+  (arcadia.core/cmpt v UnityEngine.Transform))
 
 (defn ->v3 
   ([] (Vector3. 0 0 0))
@@ -110,56 +114,34 @@
 (defn X [o] (.x (->v3 o)))
 (defn Y [o] (.y (->v3 o)))
 (defn Z [o] (.z (->v3 o)))
- 
-(defn -editor? [] (. Application isEditor)) 
 
-(defn playing? [] (. Application isPlaying))
 
-(defn load-scene [sn] (Application/LoadLevel sn))
-
-(defn loaded-scene [] Application/loadedLevel)
-
-(defn quit [] (Application/Quit))
-
-(defn screen-size [] [(Screen/width)(Screen/height)])
-
-(defn main-camera [] (UnityEngine.Camera/main))
-
-(defn resource [s] (UnityEngine.Resources/Load s))
-
-(defn null? [gob]
-  (and (gameobject? gob) (arcadia.core/null-obj? gob)))
-  
 (defn destroy! [o]
   (if (sequential? o)
-    (mapv destroy! o)
-    (let [o (if (component? o) o (->go o))]
-      (if (-editor?)
-        (. GameObject (DestroyImmediate o))
-        (. GameObject (Destroy o))))))
-
-(def primitive! arcadia.core/create-primitive)
+    (dorun (map arcadia.core/destroy o))
+    (arcadia.core/destroy o)))
 
 (defonce CLONED (atom []))
 (def _DATA_ (atom {}))
 (def _DEFERRED_ (atom []))
 (defn clear-cloned! [] 
-  (mapv destroy! @CLONED) 
+  (destroy! @CLONED) 
   (reset! CLONED [])
   (reset! _DATA_ {}))
 
 (defn clone!
   ([ref] (clone! ref nil))
   ([ref pos]
-    (let [source (cond (string? ref) (find-name ref)
-                       (keyword? ref) (resource (clojure.string/replace (subs (str ref) 1) #"[:]" "/")) 
-                       :else ref)
-        pos  (if pos (->v3 pos) (->v3 source))
-        quat  (.rotation (.transform source))
-        gob (. GameObject (Instantiate source pos quat))]
-      (set! (.name gob) (.name source))
-      (swap! CLONED #(cons gob %))
-      gob)))
+    (when (playing?)
+      (let [source (cond (string? ref) (resource ref)
+                         (keyword? ref) (resource (clojure.string/replace (subs (str ref) 1) #"[:]" "/")) 
+                         :else ref)
+          pos  (if pos (->v3 pos) (->v3 source))
+          quat  (.rotation (.transform source))
+          gob (. GameObject (Instantiate source pos quat))]
+        (set! (.name gob) (.name source))
+        (swap! CLONED #(cons gob %))
+        gob))))
 
 (defn data! [o v] (swap! _DATA_ conj {o v}) o)
 
@@ -192,18 +174,10 @@
       (->v3 res)))
 
 
-;The following functions assume gameobject args, I'm big on that but i guess they should also
-;accept transforms
+
 
 (defn name! [o s] (set! (.name o) (str s)) o)
 
-(defn parent [o] (.parent (->transform o)))
-
-(defn parent! [a b]
-  (set! (.parent (.transform a)) (.transform b)) a)
-
-(defn unparent! ^GameObject [^GameObject child]
-  (set! (.parent (.transform child)) nil) child)
 
 (defn world-position [o]
   (when-let [o (->go o)] (.TransformPoint (.transform o) (->v3 o))))
@@ -243,7 +217,7 @@
   (when-let [o (->go o)] (.localScale (.transform o) )))
 
 (defn local-scale! [o v]
-  (when-let [o (->go o)] (set! (.localScale (.transform o)) (->v3 v))))
+  (when-let [o (->go o)] (set! (.localScale (.transform o)) (->v3 v)) o))
 
 (defn rotate-around! [o point axis angle]
   (when-let [o (->go o)]
@@ -313,7 +287,7 @@
 (defn sub-forms [go]
   (rest (child-components go UnityEngine.Transform)))
  
-(defn children [go]
+#_(defn children [go]
   (filter #(= (->transform go) (.parent %)) (sub-forms go)))
 
 (defn top-forms [go]
@@ -417,16 +391,8 @@
   `(arcadia.core/objects-named ~symstr)))
 
 
-(defmacro bench [n & code]
-  `(time (dotimes [i# ~n] ~@code)))
-
-(defmacro ppexpand [code]
-  `(~'clojure.pprint/write (macroexpand-1 (quote ~code))
-    :dispatch ~'clojure.pprint/code-dispatch))
-
-
-
 (defn material [o] (.material (.GetComponent (->go o) UnityEngine.Renderer)))
+
 (defn text-mesh [o] (.text (.GetComponent (->go o) "TextMesh")))
 
 
@@ -452,5 +418,5 @@
 
 
 
-(log "hard.core is here")
+(arcadia.core/log "hard.core is here")
 

@@ -36,27 +36,32 @@
   `(def ~(symbol (str "parse-" (type-name t)))
      (vector-constructor ~t)))
 
-(deftype Bird [^{:volatile-mutable true :tag int} age])
-(swap! serial-fields conj {Bird '[age]})
+(deftype Bird [^{:volatile-mutable true :tag int} age ^String plumage])
+(reset! serial-fields {Bird '[age plumage]})
 
 (extend-protocol ISerializable
   Bird
-  (serialize [this] (str "[" (.age this) "]"))
+  (serialize [this] (str "[" (.age this) " " (.plumage this)"]"))
   (deserialize [this s] 
-    (Bird. (first (read-string s)))))
+    (let [[a p] (read-string s)]
+    (Bird. a p))))
 
 (install-type-parser Bird)
 (install-fun-printer Bird)
-(hard.boiled.Bird. 7)
+(read-string (prn-str (hard.boiled.Bird. 7 "feathers")))
+
+(let [go (clone! :sphere)
+      c (cmpt+ go ArcadiaState)]
+     (rotation! go (rand-vec 360 360 360))
+    (set! (.state c) (Bird. 2048 "feathers")))
+
+(use 'arcadia.core)
 
 (comment 
 (use 'hard.core)
 (import 'ArcadiaState)
 
-(let [go (create-primitive :cube)
-      c (cmpt+ go ArcadiaState)]
-     (rotation! go (rand-vec 360 360 360))
-    (set! (.state c) (Bird. 2048)))
+
 
 
 

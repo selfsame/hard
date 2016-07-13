@@ -2,8 +2,16 @@
 (ns hard.boiled
 	(:require 
 	 arcadia.core
-   [clojure.string :as string])
-  (:import [UnityEngine]))
+   ;[clojure.string :as string]
+   ;[clojure.pprint :as pprint]
+   )
+  (:use arcadia.core hard.core)
+  (:import [UnityEngine] 
+    ArcadiaState))
+
+
+
+(comment 
 
 (def serial-fields (atom {}))
 
@@ -48,14 +56,14 @@
 
 (install-type-parser Bird)
 (install-fun-printer Bird)
-(read-string (prn-str (hard.boiled.Bird. 7 "feathers")))
+#_(read-string (prn-str (hard.boiled.Bird. 7 "feathers")))
 
-(let [go (clone! :sphere)
+#_(let [go (clone! :sphere)
       c (cmpt+ go ArcadiaState)]
      (rotation! go (rand-vec 360 360 360))
     (set! (.state c) (Bird. 2048 "feathers")))
 
-(use 'arcadia.core)
+
 
 (comment 
 (use 'hard.core)
@@ -158,3 +166,6 @@
 ((vector-constructor fun.core.fart) [false "bad"])
 
 (constructor-arguments fun.core.fart))
+
+
+)

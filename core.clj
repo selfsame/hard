@@ -118,12 +118,12 @@
 
 (defn destroy! [o]
   (if (sequential? o)
-    (dorun (map arcadia.core/destroy o))
-    (arcadia.core/destroy o)))
+    (mapv #(UnityEngine.Object/Destroy %) o)
+    (UnityEngine.Object/Destroy o)))
 
-(defonce CLONED (atom []))
-(def _DATA_ (atom {}))
-(def _DEFERRED_ (atom []))
+(defonce CLONED     (atom []))
+(defonce _DATA_     (atom {}))
+(defonce _DEFERRED_ (atom []))
 (defn clear-cloned! [] 
   (destroy! @CLONED) 
   (reset! CLONED [])
@@ -178,6 +178,12 @@
 
 (defn name! [o s] (set! (.name o) (str s)) o)
 
+
+(defn parent! [a b]
+  (set! (.parent (.transform a)) (.transform b)) a)
+
+(defn unparent! ^GameObject [^GameObject child]
+  (set! (.parent (.transform child)) nil) child)
 
 (defn world-position [o]
   (when-let [o (->go o)] (.TransformPoint (.transform o) (->v3 o))))
@@ -416,7 +422,4 @@
 (defn gizmo-cube [^Vector3 v ^Vector3 s]
   (Gizmos/DrawWireCube v s)) 
 
-
-
-(arcadia.core/log "hard.core is here")
-
+'(arcadia.core/log "hard.core is here")

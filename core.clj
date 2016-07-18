@@ -1,7 +1,7 @@
 (ns hard.core
-  (:require arcadia.core clojure.string)
+  (:require arcadia.core arcadia.linear clojure.string)
   (:import
-    [UnityEngine Debug Resources GameObject PrimitiveType Application Color Input Screen Gizmos]))
+    [UnityEngine Debug Resources GameObject PrimitiveType Application Color Input Screen Gizmos ]))
 
 (declare position!)
 
@@ -21,7 +21,7 @@
 
 (def delta-time UnityEngine.Time/deltaTime)
 
-(defmacro ∆ [x] `(* Time/deltaTime ~x))
+
 
 (defn vector2? [x] (instance? UnityEngine.Vector2 x))
 (defn vector3? [x] (instance? UnityEngine.Vector3 x))
@@ -74,12 +74,10 @@
 (defn V÷ [a b] (Vector3/op_Division a b))
 (defn Vx [^Vector3 a ^Vector3 b] (Vector3/Cross a b))
 
-(defn find-name [str] (. GameObject (Find str)))
 
 (def ->go arcadia.core/gobj)
 
-(defn ->transform [v] 
-  (arcadia.core/cmpt v UnityEngine.Transform))
+(defn ->transform [v] (arcadia.core/cmpt v UnityEngine.Transform))
 
 (defn ->v3 
   ([] (Vector3. 0 0 0))
@@ -118,7 +116,7 @@
 
 (defn destroy! [o]
   (if (sequential? o)
-    (mapv #(UnityEngine.Object/Destroy %) o)
+    (dorun (map #(UnityEngine.Object/Destroy %) o))
     (UnityEngine.Object/Destroy o)))
 
 (defonce CLONED     (atom []))
@@ -133,15 +131,16 @@
   ([ref] (clone! ref nil))
   ([ref pos]
     (when (playing?)
-      (let [source (cond (string? ref) (resource ref)
-                         (keyword? ref) (resource (clojure.string/replace (subs (str ref) 1) #"[:]" "/")) 
-                         :else ref)
-          pos  (if pos (->v3 pos) (->v3 source))
-          quat  (.rotation (.transform source))
-          gob (. GameObject (Instantiate source pos quat))]
-        (set! (.name gob) (.name source))
-        (swap! CLONED #(cons gob %))
-        gob))))
+      (if (= ref :empty)
+          (let [gob (GameObject. "empty")] (swap! CLONED #(cons gob %)) gob)
+          (let [source (cond (string? ref) (resource ref)
+                             (keyword? ref) (resource (clojure.string/replace (subs (str ref) 1) #"[:]" "/"))
+                             :else ref)
+              pos   (or pos (.position (.transform source)))
+              quat  (.rotation (.transform source))
+              gob   (. GameObject (Instantiate source pos quat))]
+            (set! (.name gob) (.name source))
+            (swap! CLONED #(cons gob %)) gob)))))
 
 (defn data! [o v] (swap! _DATA_ conj {o v}) o)
 
@@ -177,7 +176,6 @@
 
 
 (defn name! [o s] (set! (.name o) (str s)) o)
-
 
 (defn parent! [a b]
   (set! (.parent (.transform a)) (.transform b)) a)
@@ -325,6 +323,35 @@
 
 
 ;MACROS
+'nasser
+(defmacro ∆ [x] `(* Time/deltaTime ~x))
+(defmacro pow [a b] `(Mathf/Pow ~a ~b))
+(defmacro abs [a] `(Mathf/Abs ~a))
+(defmacro sin [a] `(Mathf/Sin ~a))
+(defmacro cos [a] `(Mathf/Cos ~a))
+
+(defmacro prop* [s]
+  `(fn [o#] (~(symbol (str "." s)) o#)))
+
+(defmacro ?f 
+  ([] `(~'UnityEngine.Random/value))
+  ([n] `(* ~'UnityEngine.Random/value ~n))
+  ([a b] `(~'UnityEngine.Random/Range ~a ~b)))
+
+(defmacro ?sphere 
+  ([] `(~'UnityEngine.Random/insideUnitSphere))
+  ([n] `(arcadia.linear/v3* ~'UnityEngine.Random/insideUnitSphere ~n)))
+
+(defmacro ?circle 
+  ([] `(~'UnityEngine.Random/insideUnitCircle))
+  ([n] `(arcadia.linear/v2* ~'UnityEngine.Random/insideUnitCircle ~n)))
+
+(defmacro ?on-sphere 
+  ([] `(~'UnityEngine.Random/onUnitSphere))
+  ([n] `(arcadia.linear/v3* ~'UnityEngine.Random/onUnitSphere ~n)))
+
+(defmacro ?rotation [] `(~'UnityEngine.Random/rotation))
+
 
 (defmacro ? [& body]
   (let [[conds _ elses] (partition-by #(not= :else %) body)]
@@ -386,15 +413,17 @@
   `(~@s-exp)))
 
 
+(defn- ->name [m] 
+  (or (first (filter #(instance? System.Text.RegularExpressions.Regex %) m))
+      (apply str (interpose " " m))))
 
+(defmacro the [& m]
+  (let [k (->name m)] 
+    (if (string? k) 
+      `(arcadia.core/object-named ~k)
+      `(first (arcadia.core/objects-named ~k)))))
 
-(defmacro the [& terms]
-  (let [symstr (apply str terms)] `(find-name ~symstr)))
-
-(defmacro every [& terms]
-  (let [symstr (or (first (filter #(instance? System.Text.RegularExpressions.Regex %) terms))
-                   (apply str (interpose " " terms)))] 
-  `(arcadia.core/objects-named ~symstr)))
+(defmacro every [& m] `(arcadia.core/objects-named ~(->name m)))
 
 
 (defn material [o] (.material (.GetComponent (->go o) UnityEngine.Renderer)))
@@ -423,3 +452,5 @@
   (Gizmos/DrawWireCube v s)) 
 
 '(arcadia.core/log "hard.core is here")
+
+

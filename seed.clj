@@ -7,29 +7,11 @@
   ([] UnityEngine.Random/value)
   ([n] (* n (srand))))
 
-(defn srand-int [n] 
-  (int (* (srand) n)))
+(defn srand-int [n] (int (* (srand) n)))
 
-(defn srand-nth [col] 
-  (get col (srand-int (count col))))
+(defn srand-nth [col] (get col (srand-int (count col))))
 
-(defn sshuffle [col]
-  (sort-by (fn [_](srand)) col))
-
-
-
-(defn srand-vec [& more]
-  (mapv (fn [col]
-    (cond (number? col) (srand col)
-    (sequential? col) 
-    (case (count col) 
-      0 (srand) 
-      1 (srand (first col))
-      2 (+ (srand (apply - (reverse col))) (first col))
-      (srand)
-    :else (srand)))) more))
-
-
+(defn sshuffle [col] (sort-by (fn [_](srand)) col))
 
 ;https://gist.github.com/nasser/de0ddaead927dfa5261b
 (defmacro schance [& body]
@@ -52,6 +34,16 @@
        (cond ~@clauses))))
 
 
+(defn srand-vec [& more]
+  (mapv (fn [col]
+    (cond (number? col) (srand col)
+    (sequential? col) 
+    (case (count col) 
+      0 (srand) 
+      1 (srand (first col))
+      2 (+ (srand (apply - (reverse col))) (first col))
+      (srand)
+    :else (srand)))) more))
 
 
 ;TODO make noise configurable for user needs

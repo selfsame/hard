@@ -19,9 +19,6 @@
 
 (defn resource [s] (UnityEngine.Resources/Load s))
 
-(def delta-time UnityEngine.Time/deltaTime)
-
-
 
 (defn vector2? [x] (instance? UnityEngine.Vector2 x))
 (defn vector3? [x] (instance? UnityEngine.Vector3 x))

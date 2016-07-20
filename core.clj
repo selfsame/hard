@@ -139,6 +139,8 @@
             (set! (.name gob) (.name source))
             (swap! CLONED #(cons gob %)) gob)))))
 
+
+
 (defn data! [o v] (swap! _DATA_ conj {o v}) o)
 
 (defn data [o] (get @_DATA_ o))
@@ -449,5 +451,4 @@
   (Gizmos/DrawWireCube v s)) 
 
 '(arcadia.core/log "hard.core is here")
-
 

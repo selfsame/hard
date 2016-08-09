@@ -1,7 +1,8 @@
 (ns hard.core
   (:require arcadia.core arcadia.linear clojure.string)
   (:import
-    [UnityEngine Debug Resources GameObject PrimitiveType Application Color Input Screen Gizmos ]))
+    [UnityEngine Debug Resources GameObject PrimitiveType Application Color Input Screen Gizmos ]
+    ArcadiaState))
 
 (declare position!)
 
@@ -141,9 +142,9 @@
 
 
 
-(defn data! [o v] (swap! _DATA_ conj {o v}) o)
-
-(defn data [o] (get @_DATA_ o))
+(defn state! [o v] 
+  (let [s (or (arcadia.core/cmpt o ArcadiaState) (arcadia.core/cmpt+ o ArcadiaState))]
+    (reset! (.state s) v)))
 
 
 (defmacro defer! [& code] 
@@ -166,10 +167,12 @@
   ([r g b a] (Color. (color-normalized-number r) (color-normalized-number g) (color-normalized-number b) (color-normalized-number a))))
 
 ;TODO find fast version
-(defn- clamp-v3 [v3 min max]
-  (let [v (->vec (->v3 v3))
-      res (mapv #(Mathf/Clamp % min max) v)]
-      (->v3 res)))
+(defn clamp-v3 [v lb ub]
+  (let [lb (float lb) ub (float ub)]
+  (Vector3. 
+      (Mathf/Clamp (.x v) lb ub)
+      (Mathf/Clamp (.y v) lb ub)
+      (Mathf/Clamp (.z v) lb ub))))
 
 
 

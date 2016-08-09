@@ -1,6 +1,6 @@
 (ns hard.input
   (:import
-    [UnityEngine Input KeyCode Camera Physics Time]))
+    [UnityEngine Input KeyCode Camera Physics Time Camera]))
   
 (def ^:private axis-cache (atom [0 0]))
 

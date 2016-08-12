@@ -31,6 +31,7 @@
 			`(if (~f ~k) ~code) ))))
 
 
+
 (defn ^:private mouse-code* [b]
 	(cond (#{0 1 2} b) b
 		:else (or (get {:left 0 :middle 1 :right 2} b) 0)))

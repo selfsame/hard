@@ -83,16 +83,15 @@
   ([ref] (clone! ref nil))
   ([ref pos]
     (when (playing?)
-      (if (= ref :empty)
-          (let [gob (GameObject. "empty")] (swap! CLONED #(cons gob %)) gob)
-          (when-let [source (cond (string? ref) (resource ref)
+      (when-let [source (cond (string? ref) (resource ref)
                              (keyword? ref) (resource (clojure.string/replace (subs (str ref) 1) #"[:]" "/"))
                              :else nil)]
+
             (let [pos   (or pos (.position (.transform source)))
                   quat  (.rotation (.transform source))
-                  gob   (. GameObject (Instantiate source pos quat))]
+                  gob   (arcadia.core/instantiate source pos quat)]
               (set! (.name gob) (.name source))
-              (swap! CLONED #(cons gob %)) gob))))))
+              (swap! CLONED #(cons gob %)) gob)))))
 
 
 
@@ -137,10 +136,8 @@
 (defn local-position! [^UnityEngine.GameObject o pos]
   (set! (.localPosition (.transform o)) (->v3 pos)) o)
 
-(defn local-direction [o v]
-  (when-let [o (->go o)]
-    (let [[x y z] (->vec v)]
-      (.TransformDirection (.transform o) x y z))))
+(defn local-direction [^GameObject o ^Vector3 v]
+  (.TransformDirection (.transform o) (.x v) (.y v) (.z v)))
 
 (defn transform-point [o v]
   (when-let [o (->go o)]
@@ -173,13 +170,18 @@
 (defn rotation [o]
   (when-let [o (->go o)] (.rotation (.transform o) )))
 
-(defn rotate! [o rot]
-  (when-let [o (->go o)]
-    (.Rotate (.transform o) (->v3 rot))) o)
+(defn local-rotation [o]
+  (when-let [o (->go o)] (.localRotation (.transform o) )))
 
-(defn rotation! [o ^UnityEngine.Quaternion rot]
+(defn rotate! ^GameObject [^GameObject o ^Vector3 rot]
+  (.Rotate (.transform o) rot) o)
+
+(defn rotation! ^GameObject [^GameObject o ^UnityEngine.Quaternion rot]
+  (set! (.rotation (.transform o)) rot) o)
+
+(defn local-rotation! [o ^UnityEngine.Quaternion rot]
   (when-let [o (->go o)]
-    (set! (.rotation (.transform o)) rot)) o)
+    (set! (.localRotation (.transform o)) rot)) o)
 
 (defn look-at! 
   ([a b] (.LookAt (->transform a) (->v3 b)))

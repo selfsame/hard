@@ -36,7 +36,7 @@
 (def  ->go arcadia.core/gobj)
 (defn ->transform [v] (arcadia.core/cmpt v UnityEngine.Transform))
 
-(defn ->v3 
+(defn ^UnityEngine.Vector3 ->v3 
   ([] (Vector3. 0 0 0))
   ([a b] (Vector3. a b 0))
   ([a b c] (Vector3. a b c))
@@ -52,6 +52,8 @@
     (vector4? o) (Vector3. (.x o) (.y o) (.z o))
     (quaternion? o) (Vector3. (.x o)(.y o)(.z o))
     (color? o) (Vector3. (.r o)(.g o)(.b o)))))
+
+
 
 (defn ->vec [o]
   (cond 
@@ -127,34 +129,40 @@
 (defn world-position [o]
   (when-let [o (->go o)] (.TransformPoint (.transform o) (->v3 o))))
 
-(defn position! [o pos]
-  (set! (.position (.transform o)) (->v3 pos)) o)
+(defn position! [^UnityEngine.GameObject o ^UnityEngine.Vector3 pos]
+  (set! (.position (.transform o)) pos) o)
 
-(defn local-position [^UnityEngine.GameObject o] 
+(defn ^UnityEngine.Vector3 
+  local-position [^UnityEngine.GameObject o] 
   (.localPosition (.transform o)))
 
-(defn local-position! [^UnityEngine.GameObject o pos]
+(defn ^UnityEngine.Vector3 
+  local-position! [^UnityEngine.GameObject o pos]
   (set! (.localPosition (.transform o)) (->v3 pos)) o)
 
-(defn local-direction [^GameObject o ^Vector3 v]
-  (.TransformDirection (.transform o) (.x v) (.y v) (.z v)))
+(defn ^UnityEngine.Vector3 
+  local-direction [^GameObject o ^UnityEngine.Vector3  v]
+  (.TransformDirection (.transform o) v))
 
-(defn transform-point [o v]
+(defn ^UnityEngine.Vector3 
+  transform-point [o v]
   (when-let [o (->go o)]
     (.TransformPoint (.transform o) (->v3 v))))
 
-(defn inverse-transform-point [o v]
+(defn ^UnityEngine.Vector3 
+  inverse-transform-point [o v]
   (when-let [o (->go o)]
     (.InverseTransformPoint (.transform o) (->v3 v))))
 
-(defn inverse-transform-direction [o v]
+(defn ^UnityEngine.Vector3 
+  inverse-transform-direction [o v]
   (when-let [o (->go o)]
     (.InverseTransformDirection (.transform o) (->v3 v))))
 
 (defn move-towards [v1 v2 step]
   (Vector3/MoveTowards v1 v2 step))
 
-(defn lerp [v1 v2 ratio]
+(defn ^UnityEngine.Vector3 lerp [^UnityEngine.Vector3 v1 ^UnityEngine.Vector3 v2 ratio]
   (Vector3/Lerp (->v3 v1) (->v3 v2) ratio))
 
 (defn local-scale [o]
@@ -242,6 +250,16 @@
 
 
 ;MACROS
+(defmacro >v3 [o]
+  `(.position (.transform ~o)))
+
+(defmacro <> [o [f & xs]] `(let [o# ~o] (~f o# ~@xs) o#))
+
+#_(-> (GameObject.)
+    (<> (cmpt+ UnityEngine.Rigidbody2D))
+    (<> (set-state! :dog 'good))
+    (<> (cmpt+ UnityEngine.BoxCollider2D)))
+
 'nasser
 (defmacro ∆ [x] `(* Time/deltaTime ~x))
 (defmacro pow [a b] `(Mathf/Pow ~a ~b))

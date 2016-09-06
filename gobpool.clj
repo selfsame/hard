@@ -1,4 +1,4 @@
-(ns hard.gob-pool 
+(ns hard.gobpool 
   (:import [UnityEngine HideFlags] [Pooled])
   (:require [arcadia.core]))
 
@@ -11,7 +11,7 @@
 
 (defmacro ^UnityEngine.GameObject -clone [^clojure.lang.Keyword k]
   (let []
-  `(hard.gob-pool/-tag-clone (arcadia.core/instantiate (~'UnityEngine.Resources/Load  ~(name k))) ~(name k))))
+  `(hard.gobpool/-tag-clone (arcadia.core/instantiate (~'UnityEngine.Resources/Load  ~(name k))) ~(name k))))
 
 (defn destroy-tagged [tag]
   (dorun (map arcadia.core/destroy-immediate (arcadia.core/objects-tagged tag))))
@@ -51,7 +51,7 @@
 
 
 
-(defmacro gob-pool [length type-sym model]
+(defmacro gobpool [length type-sym model]
   (let [gob (with-meta (gensym 'gob) {:tag 'UnityEngine.GameObject})
         sym (with-meta (symbol (str "*" type-sym)) {:tag 'UnityEngine.GameObject})
         pool (with-meta (symbol (str "<>" type-sym)) {:tag 'UnityEngine.GameObject})
@@ -64,12 +64,12 @@
       (~'def ~pool (new ~GobPool (~'make-array ~'System.Object ~length) -1))
       (~'defn ~return
         [~(with-meta (symbol "a") {:tag 'UnityEngine.GameObject})] 
-        (~'hard.gob-pool/-recycle ~pool ~'a)
+        (~'hard.gobpool/-recycle ~pool ~'a)
         ~@(pool-prep 'a))
       (~'defn ~sym []
-        (~'if-let [~(with-meta o# {:tag 'UnityEngine.GameObject}) (~'hard.gob-pool/-reuse ~pool)]
+        (~'if-let [~(with-meta o# {:tag 'UnityEngine.GameObject}) (~'hard.gobpool/-reuse ~pool)]
           (if (~'arcadia.core/null-obj? ~o#) (~sym) 
             (do ~@(reuse-prep o#) ~o#))
-          (let [~o# (~'hard.gob-pool/-tag-clone (~'arcadia.core/instantiate ~gob) ~(str type-sym))]
+          (let [~o# (~'hard.gobpool/-tag-clone (~'arcadia.core/instantiate ~gob) ~(str type-sym))]
             (do ~@(reuse-prep o#) ~o#))))
       ~(mapv keyword [pool sym return]))))

@@ -1,5 +1,6 @@
 (ns hard.seed
-  (:use hard.core))
+  (:use hard.core
+    arcadia.linear))
 
 (defn seed! [v] (set! UnityEngine.Random/seed (hash v)))
 
@@ -46,32 +47,17 @@
     :else (srand)))) more))
 
 
-;TODO make noise configurable for user needs
-'(* (noise (V* location 0.001)) 100)
+(defn noise* 
+  ([] (noise* 0 {}))
+  ([seed] (noise* seed {}))
+  ([seed opts]
+    (let [i (PerlinNoise. (hash seed))
+          {:keys [in out]} opts
+          nf (fn [v] (.Noise i (double (.x v)) (double (.y v) ) (double (.z v))))]
+      (apply comp (filter fn? [out nf in])))))
 
-'(noise :terrain {:in #(* 0.001) :out #(* % 100)})
-'(noise :terrain location)
+(defn harmonic [f mags f2] (fn [v] (reduce f2 (map #(f (v3* v %)) mags))))
 
-;TODO consider combinations of noise lookups 
-'(def abc (apply juxt (map partial (repeat 3 noise) [:a :b :c])))
+(defn list-reduce [a b] (if (seq? a) (cons b a) (list b a)))
 
 
-(def ^:private PN (atom {}))
-(def ^:private PFN (atom {}))
-
-(defn noise 
-  ([k v] 
-    (cond (vector3? v) (noise k (.x v) (.y v) (.z v))
-          (vector2? v) (noise k (.x v) 0.0 (.z v))
-          (vector? v) (noise k (or (get v 0) 0.0) 
-                               (or (get v 1) 0.0) 
-                               (or (get v 2) 0.0))
-          (number? v) (noise k v 0.0 0.0)
-          (fn? v) (swap! PFN assoc k v)))
-  ([k x y] (noise k x y 0))
-  ([k x y z]
-  (let [pn (or (get @PN k) 
-               (get (swap! PN assoc k (PerlinNoise. (srand))) k))]
-    (if-let [pfn (get @PFN k)]
-      (.Noise pn (float (pfn x)) (float (pfn y)) (float (pfn z)))
-      (.Noise pn (float x) (float y) (float z))))))

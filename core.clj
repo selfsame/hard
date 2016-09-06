@@ -120,7 +120,7 @@
 
 (defn name! [o s] (set! (.name o) (str s)) o)
 
-(defn parent! [a b]
+(defn ^GameObject parent! [^GameObject a ^GameObject b]
   (set! (.parent (.transform a)) (.transform b)) a)
 
 (defn unparent! ^GameObject [^GameObject child]

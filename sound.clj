@@ -2,8 +2,9 @@
 	(:use hard.core))
 
 (def audio-clips
-  (into {} (mapv (juxt #(.name %)identity) 
-  (UnityEngine.Resources/FindObjectsOfTypeAll UnityEngine.AudioClip))))
+  (if (playing?) 
+    (into {} (mapv (juxt #(.name %) identity) 
+    (UnityEngine.Resources/FindObjectsOfTypeAll UnityEngine.AudioClip)))))
 
 (defn play-clip! 
   ([k] (play-clip!  k {})) 

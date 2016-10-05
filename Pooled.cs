@@ -1,8 +1,9 @@
 using UnityEngine;
-using UnityEditor;
 using System.Collections;
 using clojure.lang;
-
+#if UNITY_EDITOR  
+using UnityEditor;
+#endif
 
 public class Pooled : MonoBehaviour{
 	public IFn recycler;

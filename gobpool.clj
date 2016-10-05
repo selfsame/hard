@@ -1,6 +1,7 @@
 (ns hard.gobpool 
-  (:import [UnityEngine HideFlags] [Pooled])
-  (:require [arcadia.core]))
+  (:import 
+    [UnityEngine HideFlags] 
+    [Pooled]))
 
 (Pooled/addTag "pooled")
 (Pooled/addTag "clone")
@@ -11,11 +12,10 @@
 
 (defmacro ^UnityEngine.GameObject -clone [^clojure.lang.Keyword k]
   (let []
-  `(hard.gobpool/-tag-clone (arcadia.core/instantiate (~'UnityEngine.Resources/Load  ~(name k))) ~(name k))))
+  `(hard.gobpool/-tag-clone (UnityEngine.Object/Instantiate (~'UnityEngine.Resources/Load  ~(name k))) ~(name k))))
 
 (defn destroy-tagged [tag]
-  (dorun (map arcadia.core/destroy-immediate (arcadia.core/objects-tagged tag))))
-
+  (dorun (map #(UnityEngine.Object/DestroyImmediate %) (GameObject/FindGameObjectsWithTag tag))))
 
 (defprotocol IGobPool
   (-reuse   [a])
@@ -48,8 +48,6 @@
   `((set! (.tag ~o) "clone") 
     (set! (.hideFlags ~o) HideFlags/None)
     (set! (.position (.transform ~o)) (UnityEngine.Vector3. 0 0 0))))
-
-
 
 (defmacro gobpool [length type-sym model]
   (let [gob (with-meta (gensym 'gob) {:tag 'UnityEngine.GameObject})

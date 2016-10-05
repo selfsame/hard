@@ -1,8 +1,8 @@
 (ns hard.physics
-  (:require [arcadia.core])
-  (:use [hard.core])
   (:import
     [UnityEngine Ray Physics RaycastHit]))
+
+(defn gameobject? [x] (instance? UnityEngine.GameObject x))
 
 (def ^:private hit-buff (make-array UnityEngine.RaycastHit 200))
 
@@ -35,15 +35,15 @@
 
 (defn gravity [] (Physics/gravity))
 
-(defn gravity! [v3] (set! (Physics/gravity) (->v3 v3)))
+(defn gravity! [v3] (set! (Physics/gravity) v3))
 
 (defn rigidbody? [o] (instance? UnityEngine.Rigidbody o))
 
 (defn ->rigidbody [v]
-  (if-let [o (->go v)] (arcadia.core/cmpt o UnityEngine.Rigidbody) nil))
+  (if-let [o (.gameObject v)] (.GetComponent o UnityEngine.Rigidbody) nil))
 
 (defn ->rigidbody2d [v]
-  (if-let [o (->go v)] (arcadia.core/cmpt o UnityEngine.Rigidbody2D) nil))
+  (if-let [o (.gameObject v)] (.GetComponent o UnityEngine.Rigidbody2D) nil))
 
 (defn force! [body x y z] (.AddRelativeForce body x y z))
 (defn global-force! [body x y z] (.AddForce body x y z))

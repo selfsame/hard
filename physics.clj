@@ -1,7 +1,37 @@
 (ns hard.physics
+  (:require [arcadia.core])
   (:use [hard.core])
   (:import
-    [UnityEngine Physics]))
+    [UnityEngine Ray Physics RaycastHit]))
+
+(def ^:private hit-buff (make-array UnityEngine.RaycastHit 200))
+
+(defn ^System.Single raycast-non-alloc [
+  ^Vector3 origin 
+  ^Vector3 direction 
+  ^|UnityEngine.RaycastHit[]| results
+  ^System.Double len]
+  (Physics/RaycastNonAlloc origin direction results len))
+
+
+(defn- hit*
+  {:inline-arities #{2 3}
+   :inline 
+   (fn
+     ([a b]   `(raycast-non-alloc ~a ~b hit-buff Mathf/Infinity))
+     ([a b c] `(raycast-non-alloc ~a ~b hit-buff ~c)))}
+  ([^Vector3 a ^Vector3 b]
+    (raycast-non-alloc a b hit-buff Mathf/Infinity))
+  ([^Vector3 a ^Vector3 b ^System.Double c]
+    (raycast-non-alloc a b hit-buff c)))
+
+(defn hit [^Vector3 a ^Vector3 b]
+  (if (> (hit* a b) 0) (aget hit-buff 0)))
+
+(defn hits [^Vector3 a ^Vector3 b]
+  (map #(aget hit-buff %) (range (hit* a b))))
+
+#_(reduce v3+ (map #(.point %)  (hits (v3) (v3 0 -1 0))))
 
 (defn gravity [] (Physics/gravity))
 
@@ -10,13 +40,15 @@
 (defn rigidbody? [o] (instance? UnityEngine.Rigidbody o))
 
 (defn ->rigidbody [v]
-  (if-let [o (->go v)] (component o UnityEngine.Rigidbody) nil))
+  (if-let [o (->go v)] (arcadia.core/cmpt o UnityEngine.Rigidbody) nil))
 
 (defn ->rigidbody2d [v]
-  (if-let [o (->go v)] (component o UnityEngine.Rigidbody2D) nil))
+  (if-let [o (->go v)] (arcadia.core/cmpt o UnityEngine.Rigidbody2D) nil))
 
 (defn force! [body x y z] (.AddRelativeForce body x y z))
+(defn global-force! [body x y z] (.AddForce body x y z))
 (defn torque! [body x y z] (.AddRelativeTorque body x y z))
+(defn global-torque! [body x y z] (.AddTorque body x y z))
 (defn kinematic! [go v] (set! (.isKinematic (->rigidbody go)) v))
 
 (defn ->velocity [o]

@@ -1,6 +1,6 @@
 (ns hard.input
   (:import
-    [UnityEngine Input KeyCode Camera Physics Time]))
+    [UnityEngine Input KeyCode Camera Physics Time Camera]))
   
 (def ^:private axis-cache (atom [0 0]))
 
@@ -29,6 +29,7 @@
 		(cons 'do
 			(for [[k code] pairs]
 			`(if (~f ~k) ~code) ))))
+
 
 
 (defn ^:private mouse-code* [b]

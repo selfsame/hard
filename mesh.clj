@@ -1,4 +1,5 @@
 (ns hard.mesh
+  (:require [arcadia.core])
   (:use [hard.core])
   (:import
     [UnityEngine Color]))
@@ -9,7 +10,7 @@
 (defn vertex-color! [gob col]
   (when (gameobject? gob)
     (when-let [meshfilter (.GetComponent gob "MeshFilter")]
-      (let [mesh (if (-editor?) (.sharedMesh meshfilter) (.sharedMesh meshfilter))
+      (let [mesh (.sharedMesh meshfilter) 
           verts (.vertices mesh)
           colors (into-array (take (count verts) (repeat col)))]
         (set! (.colors mesh) colors) nil))))
@@ -20,7 +21,7 @@
 (defn vertex-colors! [gob c]
   (when (gameobject? gob)
     (when-let [meshfilter (.GetComponent gob "MeshFilter")]
-      (let [mesh (if (-editor?) (.mesh meshfilter) (.mesh meshfilter))
+      (let [mesh (.mesh meshfilter)
           verts (.vertices mesh)
           fn (cond (fn? c) c
                 :else (fn [_ _ _ _] c))
@@ -35,7 +36,7 @@
         (count colors) ))))
 
 (defn map-mesh-set! [o f]
-  (let [mf (component o UnityEngine.MeshFilter)
+  (let [mf (arcadia.core/cmpt o UnityEngine.MeshFilter)
         vs (.. mf mesh vertices)]
     (set! (.vertices (.mesh mf)) 
      (into-array (vec (for [i (range (count vs))] (f i (get (.vertices (.mesh mf)) i))))))
@@ -44,7 +45,7 @@
   true))
 
 (defn vcol-fn-normals [o f]
-  (let [mf (component o UnityEngine.MeshFilter)]
+  (let [mf (arcadia.core/cmpt o UnityEngine.MeshFilter)]
     (set! (.colors (.mesh mf)) 
      (into-array (vec (for [i (range (count (.colors (.mesh mf))))] (f i (get (.normals (.mesh mf)) i))))))
   true))

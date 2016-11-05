@@ -1,6 +1,5 @@
 (ns hard.seed
-  (:use hard.core
-    arcadia.linear))
+  (:import [UnityEngine]))
 
 (defn seed! [v] (set! UnityEngine.Random/seed (hash v)))
 
@@ -56,7 +55,7 @@
           nf (fn [v] (.Noise i (double (.x v)) (double (.y v) ) (double (.z v))))]
       (apply comp (filter fn? [out nf in])))))
 
-(defn harmonic [f mags f2] (fn [v] (reduce f2 (map #(f (v3* v %)) mags))))
+(defn harmonic [f mags f2] (fn [v] (reduce f2 (map #(f (UnityEngine.Vector3/op_Multiply v %)) mags))))
 
 (defn list-reduce [a b] (if (seq? a) (cons b a) (list b a)))
 

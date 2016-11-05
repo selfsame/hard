@@ -1,8 +1,8 @@
 (ns hard.sound
-	(:use hard.core))
+  (:import [UnityEngine Application]))
 
 (def audio-clips
-  (if (playing?) 
+  (if (. Application isPlaying)
     (into {} (mapv (juxt #(.name %) identity) 
     (UnityEngine.Resources/FindObjectsOfTypeAll UnityEngine.AudioClip)))))
 

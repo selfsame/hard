@@ -1,11 +1,12 @@
-(ns hard.edit
+(ns ^:editor hard.edit
 	(:use [hard.core])
-	(:import 
-		     [UnityEngine Gizmos]))
- 
-(defn sel [] (Selection/objects))
+	(:import [UnityEngine]))
 
-(defn sel! 
+'(defn active [] (Selection/activeGameObject))
+
+'(defn sel [] (Selection/objects))
+
+'(defn sel! 
  	([v] (cond (gameobject? v) (set! (Selection/objects) (into-array [v]))
  			   (sequential? v) (set! (Selection/objects) (into-array v))))
  	([v & more] (set! (Selection/objects) (into-array (cons v more)))))
@@ -13,8 +14,6 @@
 (defn clear-flags! [go]
 	(import '[UnityEngine HideFlags])
 	(set! (.hideFlags go) HideFlags/None))
-
-(defn active [] (Selection/activeGameObject))
 
 (defn not-editable! [go]
 	(import '[UnityEngine HideFlags])

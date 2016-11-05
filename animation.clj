@@ -1,9 +1,6 @@
 (ns hard.animation
- (:use arcadia.core hard.core
-  hard.physics)
   (:import [UnityEngine]))
 
- 
 ;mechanim animator
  
 (defn ->animator [o]

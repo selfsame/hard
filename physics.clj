@@ -31,6 +31,9 @@
 (defn hits [^Vector3 a ^Vector3 b]
   (map #(aget hit-buff %) (range (hit* a b))))
 
+(defn range-hits [^Vector3 a ^Vector3 b ^System.Double len]
+  (map #(aget hit-buff %) (range (hit* a b len))))
+
 #_(reduce v3+ (map #(.point %)  (hits (v3) (v3 0 -1 0))))
 
 (defn gravity [] (Physics/gravity))

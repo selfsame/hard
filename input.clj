@@ -24,6 +24,15 @@
 (defn key-up? [k]
 	(Input/GetKeyUp (kcode* k)))
 
+(defn button? [s]
+  (Input/GetButton s))
+
+(defn button-up? [s]
+  (Input/GetButtonUp s))
+
+(defn button-down? [s]
+  (Input/GetButtonDown s))
+
 (defmacro route [f & more]
 	(let [pairs (partition 2 more)]
 		(cons 'do

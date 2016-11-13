@@ -86,36 +86,15 @@
 	(get-axis :vertical)])
 
 (defn joy-left? []
-	(let [h (get-axis :horizontal)
-		  oh (first @axis-cache)]
-		(if (and (< h -0.3) (> oh -0.3)) 
-			(do (swap! axis-cache #(identity [h (last %)]))
-				true) 
-			false)))
+	(< (get-axis :horizontal) -0.3))
 
 (defn joy-right? []
-	(let [h (get-axis :horizontal)
-		  oh (first @axis-cache)]
-		(if (and (> h 0.3) (< oh 0.3)) 
-			(do (swap! axis-cache #(identity [h (last %)]))
-				true) 
-			false)))
+	(> (get-axis :horizontal) 0.3))
 
 (defn joy-up? []
-	(let [v (get-axis :vertical)
-		  ov (last @axis-cache)]
-		  
-		(if (and (< v -0.3) (> ov -0.3)) 
-			(do (swap! axis-cache #(identity [(first %) v]))
-				true) 
-			false)))
+	(> (get-axis :vertical) 0.3))
 
 (defn joy-down? []
-	(let [v (get-axis :vertical)
-		  ov (last @axis-cache)]
-		(if (and (> v 0.3) (< ov 0.3)) 
-			(do (swap! axis-cache #(identity [(first %) v]))
-				true) 
-			false)))
+	(< (get-axis :vertical) -0.3))
 
 

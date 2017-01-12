@@ -165,10 +165,10 @@
 (defn ^UnityEngine.Vector3 lerp [^UnityEngine.Vector3 v1 ^UnityEngine.Vector3 v2 ratio]
   (Vector3/Lerp (->v3 v1) (->v3 v2) ratio))
 
-(defn local-scale [o]
+(defn ^UnityEngine.GameObject local-scale [^UnityEngine.GameObject o]
   (when-let [o (->go o)] (.localScale (.transform o) )))
 
-(defn local-scale! [o v]
+(defn ^UnityEngine.GameObject local-scale! [^UnityEngine.GameObject o ^UnityEngine.Vector3 v]
   (when-let [o (->go o)] (set! (.localScale (.transform o)) (->v3 v)) o))
 
 (defn rotate-around! [o point axis angle]

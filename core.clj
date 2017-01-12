@@ -253,6 +253,11 @@
 (defmacro >v3 [o]
   `(.position (.transform ~o)))
 
+(defmacro >v2 [o]
+  `(UnityEngine.Vector2. 
+    (.x (.position (.transform ~o)))
+    (.y (.position (.transform ~o)))))
+
 (defmacro <> [o [f & xs]] `(let [o# ~o] (~f o# ~@xs) o#))
 
 #_(-> (GameObject.)

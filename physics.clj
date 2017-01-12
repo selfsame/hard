@@ -1,6 +1,7 @@
 (ns hard.physics
+  (:use arcadia.linear)
   (:import
-    [UnityEngine Ray Physics RaycastHit]))
+    [UnityEngine Ray Physics RaycastHit Physics2D]))
 
 (defn gob? [x] (instance? UnityEngine.GameObject x))
 
@@ -54,6 +55,17 @@
 (defn global-torque! [body x y z] (.AddTorque body x y z))
 (defn kinematic! [go v] (set! (.isKinematic (->rigidbody go)) v))
 
+(defn force2d!         [body x y] (.AddRelativeForce body (v2 x y)))
+(defn global-force2d!  [^UnityEngine.Rigidbody2D body x y] (.AddForce body (v2 x y)))
+(defn torque2d!        [^UnityEngine.Rigidbody2D body r] (.AddTorque body (float r)) nil)
+
 (defn ->velocity [o]
   (if-let [body (cond (rigidbody? o) o (gob? o) (->rigidbody o))]
     (.velocity body)))
+
+(defn layer-mask [& s]
+  (short (UnityEngine.LayerMask/GetMask (into-array s))))
+
+(defn overlap-circle 
+  ([p r] (Physics2D/OverlapCircle p (float r)))
+  ([p r m] (Physics2D/OverlapCircle p (float r) m) ))

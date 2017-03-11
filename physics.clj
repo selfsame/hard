@@ -1,7 +1,7 @@
 (ns hard.physics
   (:use arcadia.linear)
   (:import
-    [UnityEngine Ray Physics RaycastHit Physics2D]))
+    [UnityEngine Mathf Vector3 Ray Physics RaycastHit Physics2D]))
 
 (defn gob? [x] (instance? UnityEngine.GameObject x))
 

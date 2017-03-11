@@ -1,6 +1,6 @@
 (ns hard.gobpool 
   (:import 
-    [UnityEngine HideFlags] 
+    [UnityEngine HideFlags GameObject] 
     [Pooled]))
 
 (Pooled/addTag "pooled")

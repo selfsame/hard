@@ -1,7 +1,7 @@
 using System;
  
 //namespace ImageTools.Core
-namespace PerlinNoise
+namespace Hard
 {
  
     /* Perlin noise class.  ( by Tom Nuydens (tom@delphi3d.net) )

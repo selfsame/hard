@@ -1,6 +1,6 @@
 (ns ^:editor hard.edit
 	(:use [hard.core])
-	(:import [UnityEngine]))
+	(:import [UnityEngine HideFlags]))
 
 '(defn active [] (Selection/activeGameObject))
 

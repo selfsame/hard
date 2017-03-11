@@ -1,5 +1,5 @@
 (ns hard.sound
-  (:import [UnityEngine Application]))
+  (:import [UnityEngine GameObject Application]))
 
 (def audio-clips
   (if (. Application isPlaying)

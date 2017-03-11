@@ -1,5 +1,5 @@
 (ns hard.seed
-  (:import [UnityEngine]))
+  (:import [UnityEngine] [Hard PerlinNoise]))
 
 (defn seed! [v] (set! UnityEngine.Random/seed (hash v)))
 

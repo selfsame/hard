@@ -2,7 +2,7 @@
   (:require arcadia.core arcadia.linear clojure.string)
   (:import
     [UnityEngine Debug Resources GameObject PrimitiveType 
-    Application Color Input Screen Gizmos Camera Component]
+    Application Color Input Screen Gizmos Camera Component Vector3 Mathf Quaternion]
     ArcadiaState))
 
 (declare position!)

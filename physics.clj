@@ -26,8 +26,11 @@
   ([^Vector3 a ^Vector3 b ^System.Double c]
     (raycast-non-alloc a b hit-buff c)))
 
-(defn hit [^Vector3 a ^Vector3 b]
-  (if (> (hit* a b) 0) (aget hit-buff 0)))
+(defn hit 
+  ([^Vector3 a ^Vector3 b]
+   (if (> (hit* a b) 0) (aget hit-buff 0)))
+  ([^Vector3 a ^Vector3 b ^System.Double c]
+   (if (> (hit* a b c) 0) (aget hit-buff 0))))
 
 (defn hits [^Vector3 a ^Vector3 b]
   (map #(aget hit-buff %) (range (hit* a b))))

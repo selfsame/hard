@@ -266,11 +266,11 @@
     (<> (cmpt+ UnityEngine.BoxCollider2D)))
 
 'nasser
-(defmacro ∆ [x] `(* Time/deltaTime ~x))
-(defmacro pow [a b] `(Mathf/Pow ~a ~b))
-(defmacro abs [a] `(Mathf/Abs ~a))
-(defmacro sin [a] `(Mathf/Sin ~a))
-(defmacro cos [a] `(Mathf/Cos ~a))
+(defmacro ∆ [x] `(* UnityEngine.Time/deltaTime ~x))
+(defmacro pow [a b] `(UnityEngine.Mathf/Pow ~a ~b))
+(defmacro abs [a] `(UnityEngine.Mathf/Abs ~a))
+(defmacro sin [a] `(UnityEngine.Mathf/Sin ~a))
+(defmacro cos [a] `(UnityEngine.Mathf/Cos ~a))
 
 (defmacro prop* [s]
   `(fn [o#] (~(symbol (str "." s)) o#)))

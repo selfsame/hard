@@ -2,13 +2,13 @@
   (:import
     [UnityEngine Color]))
 
-(defn gameobject? [x] (instance? UnityEngine.GameObject x))
+(defn gobj? [x] (instance? UnityEngine.GameObject x))
 
 (defn vertices [gob] 
   (.vertices (.sharedMesh (.GetComponent gob "MeshFilter"))))
 
 (defn vertex-color! [gob col]
-  (when (gameobject? gob)
+  (when (gobj? gob)
     (when-let [meshfilter (.GetComponent gob "MeshFilter")]
       (let [mesh (.sharedMesh meshfilter) 
           verts (.vertices mesh)
@@ -19,7 +19,7 @@
   (set! (.color (.material (.GetComponent o UnityEngine.Renderer))) c))
 
 (defn vertex-colors! [gob c]
-  (when (gameobject? gob)
+  (when (gobj? gob)
     (when-let [meshfilter (.GetComponent gob "MeshFilter")]
       (let [mesh (.mesh meshfilter)
           verts (.vertices mesh)

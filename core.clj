@@ -3,7 +3,8 @@
   (:import
     [UnityEngine Debug Resources GameObject PrimitiveType 
     Application Color Input Screen Gizmos Camera Component Vector3 Mathf Quaternion]
-    ArcadiaState))
+    ArcadiaState
+    Hard.Helper))
 
 (declare position!)
 
@@ -76,25 +77,46 @@
     (UnityEngine.Object/Destroy o)))
 
 (defonce CLONED (atom []))
+(defonce DATA (atom {}))
 
 (defn clear-cloned! [] 
   (destroy! @CLONED) 
-  (reset! CLONED []))
+  (reset! CLONED [])
+  (reset! DATA {}))
 
-(defn clone!
+(defn ^UnityEngine.GameObject clone!
   ([ref] (clone! ref nil))
   ([ref pos]
     (when (playing?)
-      (when-let [source (cond (string? ref) (resource ref)
-                             (keyword? ref) (resource (clojure.string/replace (subs (str ref) 1) #"[:]" "/"))
-                             :else nil)]
+      (when-let [^UnityEngine.GameObject source 
+                  (cond  (string? ref)  (resource ref)
+                         (keyword? ref) (resource (clojure.string/replace (subs (str ref) 1) #"[:]" "/"))
+                         :else nil)]
 
             (let [pos   (or pos (.position (.transform source)))
                   quat  (.rotation (.transform source))
-                  gob   (arcadia.core/instantiate source pos quat)]
+                  ^UnityEngine.GameObject gob   (arcadia.core/instantiate source pos quat)]
               (set! (.name gob) (.name source))
               (swap! CLONED #(cons gob %)) gob)))))
 
+
+(defn data! 
+  ([^UnityEngine.GameObject o v] 
+    (swap! DATA assoc o v) o)
+  ([^UnityEngine.GameObject o k v] 
+    (swap! DATA assoc-in [o k] v) o))
+
+(defn data 
+  ([^UnityEngine.GameObject o] 
+    (get @DATA o))
+  ([^UnityEngine.GameObject o k] 
+    (get-in @DATA [o k])))
+
+(defn update-data! 
+  ([^UnityEngine.GameObject o f] 
+    (swap! DATA update o f) o)
+  ([^UnityEngine.GameObject o k f] 
+    (swap! DATA update-in [o k] f) o))
 
 
 (defn state! [^UnityEngine.GameObject o v] 
@@ -239,12 +261,8 @@
       (recur (.parent o) (cons o col))))))
 
 
-(defn child-named 
-  ([go s & more]
-    (map #(child-named go %) (cons s more)))
-  ([go s]
-    (let [ts (child-components go UnityEngine.Transform)]
-      (first (take 1 (filter #(= (.name %) s) (map ->go ts)))))))
+(defn ^UnityEngine.GameObject child-named [^UnityEngine.GameObject go ^System.String s]
+  (Hard.Helper/ChildNamed go s))
 
 
 

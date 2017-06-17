@@ -264,7 +264,9 @@
 (defn ^UnityEngine.GameObject child-named [^UnityEngine.GameObject go ^System.String s]
   (Hard.Helper/ChildNamed go s))
 
-
+(defn ^UnityEngine.GameObject direct-child-named [^UnityEngine.GameObject go ^System.String s]
+  (if-let [^UnityEngine.Transform t (.Find (.transform go) s)]
+    (.gameObject t)))
 
 
 ;MACROS
@@ -362,6 +364,16 @@
 (defn gizmo-point 
   ([^Vector3 v] (Gizmos/DrawSphere v 0.075))
   ([^Vector3 v r] (Gizmos/DrawSphere v r)))
+
+
+(defn material-color! [^UnityEngine.GameObject o ^UnityEngine.Color c] 
+  (let [^UnityEngine.Renderer r (.GetComponent o UnityEngine.Renderer)]
+    (set! (.color (.material r)) c)))
+
+(defn text! [^UnityEngine.GameObject o ^System.String s] 
+  (let [^UnityEngine.TextMesh tm (.GetComponent o UnityEngine.TextMesh)]
+    (set! (.text tm) s)))
+
 
 '(hard.core)
 

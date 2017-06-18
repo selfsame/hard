@@ -41,12 +41,12 @@
 (defn pool-prep [o]
   `((set! (.tag ~o) "pooled")
     (.SetParent (.transform ~o) nil false)  
-    (set! (.hideFlags ~o) HideFlags/HideAndDontSave)
+    (set! (.hideFlags ~o) UnityEngine.HideFlags/HideAndDontSave)
     (set! (.position (.transform ~o)) (UnityEngine.Vector3. 0 -100000 0))))
 
 (defn reuse-prep [o]
   `((set! (.tag ~o) "clone") 
-    (set! (.hideFlags ~o) HideFlags/None)
+    (set! (.hideFlags ~o) UnityEngine.HideFlags/None)
     (set! (.position (.transform ~o)) (UnityEngine.Vector3. 0 0 0))))
 
 (defmacro gobpool [length type-sym model]

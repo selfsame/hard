@@ -5,22 +5,23 @@
 (defn gobj? [x] (instance? UnityEngine.GameObject x))
 
 (defn vertices [gob] 
-  (.vertices (.sharedMesh (.GetComponent gob "MeshFilter"))))
+  (.vertices (.mesh (.GetComponent gob UnityEngine.MeshFilter))))
+
+(defn vertices! [gob ar] 
+  (set! (.vertices (.mesh (.GetComponent gob UnityEngine.MeshFilter))) ar))
 
 (defn vertex-color! [gob col]
   (when (gobj? gob)
-    (when-let [meshfilter (.GetComponent gob "MeshFilter")]
+    (when-let [meshfilter (.GetComponent gob UnityEngine.MeshFilter)]
       (let [mesh (.sharedMesh meshfilter) 
           verts (.vertices mesh)
           colors (into-array (take (count verts) (repeat col)))]
         (set! (.colors mesh) colors) nil))))
 
-(defn material-color! [o c]
-  (set! (.color (.material (.GetComponent o UnityEngine.Renderer))) c))
 
 (defn vertex-colors! [gob c]
   (when (gobj? gob)
-    (when-let [meshfilter (.GetComponent gob "MeshFilter")]
+    (when-let [meshfilter (.GetComponent gob UnityEngine.MeshFilter)]
       (let [mesh (.mesh meshfilter)
           verts (.vertices mesh)
           fn (cond (fn? c) c

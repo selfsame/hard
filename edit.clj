@@ -2,9 +2,9 @@
 	(:use [hard.core])
 	(:import [UnityEngine HideFlags]))
 
-'(defn active [] (Selection/activeGameObject))
+'(defn active [] (UnityEditor.Selection/activeGameObject))
 
-'(defn sel [] (Selection/objects))
+'(defn sel [] (UnityEditor.Selection/objects))
 
 '(defn sel! 
  	([v] (cond (gameobject? v) (set! (Selection/objects) (into-array [v]))

@@ -4,10 +4,10 @@
 
 (defn gobj? [x] (instance? UnityEngine.GameObject x))
 
-(defn vertices [gob] 
+(defn vertices [^UnityEngine.GameObject gob] 
   (.vertices (.mesh (.GetComponent gob UnityEngine.MeshFilter))))
 
-(defn vertices! [gob ar] 
+(defn vertices! [^UnityEngine.GameObject gob ^UnityEngine.Vector3|[]| ar] 
   (set! (.vertices (.mesh (.GetComponent gob UnityEngine.MeshFilter))) ar))
 
 (defn vertex-color! [gob col]

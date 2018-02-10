@@ -2,6 +2,8 @@
 	(:use [hard.core])
 	(:import [UnityEngine HideFlags]))
 
+'(import [UnityEditor Selection])
+
 '(defn active [] (UnityEditor.Selection/activeGameObject))
 
 '(defn sel [] (UnityEditor.Selection/objects))

@@ -3,7 +3,7 @@
 
 ;mechanim animator
  
-(defn ->animator [o]
+(defn ->animator [^UnityEngine.GameObject o]
   (.GetComponentInChildren o UnityEngine.Animator))
 
 (defn state-info [o]
@@ -21,8 +21,8 @@
   ([o s v] (.SetBool (->animator o) s v)))
 
 (defn param-float 
-  ([o s] (.GetFloat (->animator o) s))
-  ([o s v] (.SetFloat (->animator o) s v)))
+  ([^UnityEngine.GameObject o s] (.GetFloat (->animator o) s))
+  ([^UnityEngine.GameObject o s v] (.SetFloat (->animator o) s v)))
 
 
 ;legacy animations

@@ -24,5 +24,10 @@ namespace Hard{
         {
             return coll[i];
         }
+
+        public static int Layer(int i)
+        {
+        	return 1 << i;
+        }
     }
 }

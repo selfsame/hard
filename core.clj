@@ -84,8 +84,19 @@
   (reset! CLONED [])
   (reset! DATA {}))
 
-(defn ^UnityEngine.GameObject clone!
-  ([ref] (clone! ref nil))
+(defmacro clone! [kw]
+  (if (keyword? kw)
+    (let [source (clojure.string/replace (subs (str kw) 1) #"[:]" "/")]
+      `(let [^UnityEngine.GameObject source# (~'UnityEngine.Resources/Load ~source)
+             ^UnityEngine.GameObject gob# (~'UnityEngine.GameObject/Instantiate source#)]
+        (~'set! (.name gob#) (.name source#))
+        (swap! ~'hard.core/CLONED #(cons gob# %))
+        gob#))
+    `(-clone! ~kw)))
+
+
+(defn ^UnityEngine.GameObject -clone!
+  ([ref] (-clone! ref nil))
   ([ref pos]
     (when (playing?)
       (when-let [^UnityEngine.GameObject source 
@@ -215,19 +226,17 @@
 
 (defn look-at! 
   ([a b] (.LookAt (->transform a) (->v3 b)))
-  ([a b c] (.LookAt (->transform a) (->v3 b) (->v3 b))))
+  ([a b c] (.LookAt (->transform a) (->v3 b) (->v3 c))))
 
 (defn look-quat [a b]
   (Quaternion/LookRotation  (->v3 (arcadia.linear/v3- (->v3 b) (->v3 a)))))
 
-(defn lerp-look! [a b ^double v]
-  (let [at (->transform a)
+(defn lerp-look! [^UnityEngine.GameObject a b ^double v]
+  (let [^UnityEngine.Transform at (.transform a)
         aq (.rotation at)
         lq (look-quat a b)
         res (Quaternion/Lerp aq lq (float v))]
     (set! (.rotation at) res)))
-
- 
 
 
 (defn parent-component [thing sym]
@@ -314,7 +323,14 @@
 
 (defmacro ?rotation [] `(~'UnityEngine.Random/rotation))
 
-
+;thanks @nasser
+(defmacro foreach [[local-sym arr] & body]
+  `(let [len# (.Length ~arr)]
+     (loop [i# (int 0)]
+       (when (< i# len#)
+         (let [~local-sym (aget ~arr i#)]
+           ~@body
+           (recur (inc i#)))))))
 
 (defmacro ? [& body]
   (if (> 4 (count body))

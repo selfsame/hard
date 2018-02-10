@@ -1,9 +1,20 @@
 (ns hard.physics
   (:use arcadia.linear)
   (:import
-    [UnityEngine Mathf Vector3 Ray Physics RaycastHit Physics2D]))
+    [UnityEngine Mathf Vector3 Ray Physics RaycastHit Physics2D LayerMask]))
 
 (defn gob? [x] (instance? UnityEngine.GameObject x))
+
+(defn mask [n]
+  (int (bit-shift-left 1 (if (string? n) (LayerMask/NameToLayer n) n))))
+
+'(LayerMask/GetMask (into-array System.String ["player"]))
+
+(defn set-mask! [o n]
+  (let [m (int (if (string? n) (LayerMask/NameToLayer n) n))
+        ^UnityEngine.Transform|[]| ts (.GetComponentsInChildren o UnityEngine.Transform)]
+    (run! 
+      #(set! (.layer (.gameObject %)) m) ts)))
 
 (def ^:private hit-buff (make-array UnityEngine.RaycastHit 200))
 
@@ -26,19 +37,25 @@
   ([^Vector3 a ^Vector3 b ^System.Double c]
     (raycast-non-alloc a b hit-buff c)))
 
+(def zero-long (long 0))
+
 (defn hit 
   ([^Vector3 a ^Vector3 b]
    (if (> (hit* a b) 0) (aget hit-buff 0)))
   ([^Vector3 a ^Vector3 b ^System.Double c]
-   (if (> (hit* a b c) 0) (aget hit-buff 0))))
+   (if (> (hit* a b c) 0) (aget hit-buff 0)))
+  ([^Vector3 a ^Vector3 b ^System.Double c d]
+   (if (> (Physics/RaycastNonAlloc a b hit-buff c d) zero-long) (aget hit-buff zero-long))))
 
-(defn hits [^Vector3 a ^Vector3 b]
-  (map #(aget hit-buff %) (range (hit* a b))))
+(defn hits 
+  ([^Vector3 a ^Vector3 b]
+    (map #(aget hit-buff %) (range (hit* a b))))
+  ([^Vector3 a ^Vector3 b ^System.Double c]
+    (map #(aget hit-buff %) (range (hit* a b c))))
+  ([^Vector3 a ^Vector3 b ^System.Double c d]
+    (map #(aget hit-buff %) (range (Physics/RaycastNonAlloc a b hit-buff c d)))))
 
-(defn range-hits [^Vector3 a ^Vector3 b ^System.Double len]
-  (map #(aget hit-buff %) (range (hit* a b len))))
 
-#_(reduce v3+ (map #(.point %)  (hits (v3) (v3 0 -1 0))))
 
 (defn gravity [] (Physics/gravity))
 
@@ -46,8 +63,8 @@
 
 (defn rigidbody? [o] (instance? UnityEngine.Rigidbody o))
 
-(defn ->rigidbody [v]
-  (if-let [o (.gameObject v)] (.GetComponent o UnityEngine.Rigidbody) nil))
+(defn ^UnityEngine.Rigidbody ->rigidbody [^UnityEngine.GameObject o]
+  (.GetComponent o UnityEngine.Rigidbody))
 
 (defn ->rigidbody2d [v]
   (if-let [o (.gameObject v)] (.GetComponent o UnityEngine.Rigidbody2D) nil))
@@ -72,3 +89,7 @@
 (defn overlap-circle 
   ([p r] (Physics2D/OverlapCircle p (float r)))
   ([p r m] (Physics2D/OverlapCircle p (float r) m) ))
+
+(defn overlap-sphere 
+  ([p r] (Physics/OverlapSphere p (float r)))
+  ([p r m] (Physics/OverlapSphere p (float r) m) ))

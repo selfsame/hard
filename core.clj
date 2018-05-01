@@ -6,7 +6,7 @@
     ArcadiaState
     Hard.Helper))
 
-(declare position!)
+(declare position! >v3)
 
 (defn playing? [] (. Application isPlaying))
 
@@ -37,38 +37,9 @@
 (def  ->go arcadia.core/gobj)
 (defn ->transform [v] (arcadia.core/cmpt v UnityEngine.Transform))
 
-(defn ^UnityEngine.Vector3 ->v3 
-  ([] (Vector3. 0 0 0))
-  ([a b] (Vector3. a b 0))
-  ([a b c] (Vector3. a b c))
-  ([o] 
-  (cond 
-    (gameobject? o) (.position (.transform o))
-    (vector3? o) o
-    (number? o) (Vector3. o o o)
-    (transform? o) (.position o)
-    (component? o) (.position (.transform (->go o)))
-    (sequential? o) (Vector3. (get-or o 0 0) (get-or o 1 0) (get-or o 2 0))
-    (vector2? o) (Vector3. (.x o) (.y o) 0)
-    (vector4? o) (Vector3. (.x o) (.y o) (.z o))
-    (quaternion? o) (Vector3. (.x o)(.y o)(.z o))
-    (color? o) (Vector3. (.r o)(.g o)(.b o)))))
-
-
-
-(defn ->vec [o]
-  (cond 
-    (vector3? o) [(.x o)(.y o)(.z o)]
-    (vector2? o) [(.x o)(.y o)]
-    (vector4? o) [(.x o)(.y o)(.z o)(.w o)]
-    (quaternion? o) [(.x o)(.y o)(.z o)(.w o)]
-    (color? o) [(.r o)(.g o)(.b o)(.a o)]
-    :else (vec o)))
-
-
-(defn X [o] (.x (->v3 o)))
-(defn Y [o] (.y (->v3 o)))
-(defn Z [o] (.z (->v3 o)))
+(defn X [o] (.x (>v3 o)))
+(defn Y [o] (.y (>v3 o)))
+(defn Z [o] (.z (>v3 o)))
 
 
 (defn destroy! [o]
@@ -160,7 +131,7 @@
   (set! (.parent (.transform child)) nil) child)
 
 (defn world-position [o]
-  (when-let [o (->go o)] (.TransformPoint (.transform o) (->v3 o))))
+  (when-let [o (->go o)] (.TransformPoint (.transform o) (>v3 o))))
 
 (defn position! [^UnityEngine.GameObject o ^UnityEngine.Vector3 pos]
   (set! (.position (.transform o)) pos) o)
@@ -171,7 +142,7 @@
 
 (defn ^UnityEngine.Vector3 
   local-position! [^UnityEngine.GameObject o pos]
-  (set! (.localPosition (.transform o)) (->v3 pos)) o)
+  (set! (.localPosition (.transform o)) (>v3 pos)) o)
 
 (defn ^UnityEngine.Vector3 
   local-direction [^GameObject o ^UnityEngine.Vector3  v]
@@ -180,33 +151,33 @@
 (defn ^UnityEngine.Vector3 
   transform-point [o v]
   (when-let [o (->go o)]
-    (.TransformPoint (.transform o) (->v3 v))))
+    (.TransformPoint (.transform o) (>v3 v))))
 
 (defn ^UnityEngine.Vector3 
   inverse-transform-point [o v]
   (when-let [o (->go o)]
-    (.InverseTransformPoint (.transform o) (->v3 v))))
+    (.InverseTransformPoint (.transform o) (>v3 v))))
 
 (defn ^UnityEngine.Vector3 
   inverse-transform-direction [o v]
   (when-let [o (->go o)]
-    (.InverseTransformDirection (.transform o) (->v3 v))))
+    (.InverseTransformDirection (.transform o) (>v3 v))))
 
 (defn move-towards [v1 v2 step]
   (Vector3/MoveTowards v1 v2 step))
 
 (defn ^UnityEngine.Vector3 lerp [^UnityEngine.Vector3 v1 ^UnityEngine.Vector3 v2 ratio]
-  (Vector3/Lerp (->v3 v1) (->v3 v2) ratio))
+  (Vector3/Lerp (>v3 v1) (>v3 v2) ratio))
 
 (defn ^UnityEngine.GameObject local-scale [^UnityEngine.GameObject o]
   (when-let [o (->go o)] (.localScale (.transform o) )))
 
 (defn ^UnityEngine.GameObject local-scale! [^UnityEngine.GameObject o ^UnityEngine.Vector3 v]
-  (when-let [o (->go o)] (set! (.localScale (.transform o)) (->v3 v)) o))
+  (when-let [o (->go o)] (set! (.localScale (.transform o)) (>v3 v)) o))
 
 (defn rotate-around! [o point axis angle]
   (when-let [o (->go o)]
-  (. (.transform o) (RotateAround (->v3 point) (->v3 axis) angle))))
+  (. (.transform o) (RotateAround (>v3 point) (>v3 axis) angle))))
 
 (defn rotation [o]
   (when-let [o (->go o)] (.rotation (.transform o) )))
@@ -225,11 +196,11 @@
     (set! (.localRotation (.transform o)) rot)) o)
 
 (defn look-at! 
-  ([a b] (.LookAt (->transform a) (->v3 b)))
-  ([a b c] (.LookAt (->transform a) (->v3 b) (->v3 c))))
+  ([a b] (.LookAt (->transform a) (>v3 b)))
+  ([a b c] (.LookAt (->transform a) (>v3 b) (>v3 c))))
 
 (defn look-quat [a b]
-  (Quaternion/LookRotation  (->v3 (arcadia.linear/v3- (->v3 b) (->v3 a)))))
+  (Quaternion/LookRotation  (>v3 (arcadia.linear/v3- (>v3 b) (>v3 a)))))
 
 (defn lerp-look! [^UnityEngine.GameObject a b ^double v]
   (let [^UnityEngine.Transform at (.transform a)
@@ -287,6 +258,15 @@
     (.x (.position (.transform ~o)))
     (.y (.position (.transform ~o)))))
 
+;@pjago
+(defmacro v3map [f & v3s]
+  (let [vs (repeatedly (count v3s) #(gensym "v"))
+        xs (map #(list '.x %) vs)
+        ys (map #(list '.y %) vs)
+        zs (map #(list '.z %) vs)]
+    `(let [~@(interleave vs v3s)]
+        (v3 (~f ~@xs) (~f ~@ys) (~f ~@zs)))))
+
 (defmacro <> [o [f & xs]] `(let [o# ~o] (~f o# ~@xs) o#))
 
 #_(-> (GameObject.)
@@ -296,6 +276,7 @@
 
 'nasser
 (defmacro ∆ [x] `(* UnityEngine.Time/deltaTime ~x))
+
 (defmacro pow [a b] `(UnityEngine.Mathf/Pow ~a ~b))
 (defmacro abs [a] `(UnityEngine.Mathf/Abs ~a))
 (defmacro sin [a] `(UnityEngine.Mathf/Sin ~a))

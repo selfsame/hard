@@ -29,5 +29,10 @@ namespace Hard{
         {
         	return 1 << i;
         }
+
+        public static AnimationState GetAnimationState(Animation animation, string s)
+        {
+            return animation[s];
+        }
     }
 }

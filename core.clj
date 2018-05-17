@@ -6,7 +6,7 @@
     ArcadiaState
     Hard.Helper))
 
-(declare position! >v3)
+(declare position!)
 
 (defn playing? [] (. Application isPlaying))
 
@@ -36,6 +36,9 @@
 
 (def  ->go arcadia.core/gobj)
 (defn ->transform [v] (arcadia.core/cmpt v UnityEngine.Transform))
+
+(defmacro >v3 [o]
+  `(.position (.transform ~o)))
 
 (defn X [o] (.x (>v3 o)))
 (defn Y [o] (.y (>v3 o)))
@@ -142,7 +145,7 @@
 
 (defn ^UnityEngine.Vector3 
   local-position! [^UnityEngine.GameObject o pos]
-  (set! (.localPosition (.transform o)) (>v3 pos)) o)
+  (set! (.localPosition (.transform o)) pos) o)
 
 (defn ^UnityEngine.Vector3 
   local-direction [^GameObject o ^UnityEngine.Vector3  v]
@@ -151,33 +154,33 @@
 (defn ^UnityEngine.Vector3 
   transform-point [o v]
   (when-let [o (->go o)]
-    (.TransformPoint (.transform o) (>v3 v))))
+    (.TransformPoint (.transform o) v)))
 
 (defn ^UnityEngine.Vector3 
   inverse-transform-point [o v]
   (when-let [o (->go o)]
-    (.InverseTransformPoint (.transform o) (>v3 v))))
+    (.InverseTransformPoint (.transform o) v)))
 
 (defn ^UnityEngine.Vector3 
   inverse-transform-direction [o v]
   (when-let [o (->go o)]
-    (.InverseTransformDirection (.transform o) (>v3 v))))
+    (.InverseTransformDirection (.transform o) v)))
 
 (defn move-towards [v1 v2 step]
   (Vector3/MoveTowards v1 v2 step))
 
 (defn ^UnityEngine.Vector3 lerp [^UnityEngine.Vector3 v1 ^UnityEngine.Vector3 v2 ratio]
-  (Vector3/Lerp (>v3 v1) (>v3 v2) ratio))
+  (Vector3/Lerp v1 v2 ratio))
 
 (defn ^UnityEngine.GameObject local-scale [^UnityEngine.GameObject o]
   (when-let [o (->go o)] (.localScale (.transform o) )))
 
 (defn ^UnityEngine.GameObject local-scale! [^UnityEngine.GameObject o ^UnityEngine.Vector3 v]
-  (when-let [o (->go o)] (set! (.localScale (.transform o)) (>v3 v)) o))
+  (when-let [o (->go o)] (set! (.localScale (.transform o)) v) o))
 
 (defn rotate-around! [o point axis angle]
   (when-let [o (->go o)]
-  (. (.transform o) (RotateAround (>v3 point) (>v3 axis) angle))))
+  (. (.transform o) (RotateAround point axis angle))))
 
 (defn rotation [o]
   (when-let [o (->go o)] (.rotation (.transform o) )))
@@ -196,11 +199,11 @@
     (set! (.localRotation (.transform o)) rot)) o)
 
 (defn look-at! 
-  ([a b] (.LookAt (->transform a) (>v3 b)))
-  ([a b c] (.LookAt (->transform a) (>v3 b) (>v3 c))))
+  ([a b] (.LookAt (->transform a) b))
+  ([a b c] (.LookAt (->transform a) b c)))
 
 (defn look-quat [a b]
-  (Quaternion/LookRotation  (>v3 (arcadia.linear/v3- (>v3 b) (>v3 a)))))
+  (Quaternion/LookRotation (arcadia.linear/v3- b (>v3 a))))
 
 (defn lerp-look! [^UnityEngine.GameObject a b ^double v]
   (let [^UnityEngine.Transform at (.transform a)
@@ -250,8 +253,6 @@
 
 
 ;MACROS
-(defmacro >v3 [o]
-  `(.position (.transform ~o)))
 
 (defmacro >v2 [o]
   `(UnityEngine.Vector2. 
